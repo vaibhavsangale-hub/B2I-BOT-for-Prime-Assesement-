@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Career247 – B2I Analytics Bot</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0d1117;--surface:#161b22;--surface2:#21262d;--border:#30363d;
+  --accent:#58a6ff;--accent2:#bc8cff;--success:#3fb950;--warning:#d29922;
+  --danger:#f85149;--text:#c9d1d9;--text2:#8b949e;
+  --best:#3fb950;--good:#58a6ff;--avg:#d29922;--poor:#f85149;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+
+/* HEADER */
+.hdr{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:10px;font-size:19px;font-weight:700}
+.logo-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px}
+.pill{font-size:11px;background:var(--accent2);color:#fff;padding:2px 9px;border-radius:12px;font-weight:500}
+
+/* SCREENS */
+.screen{display:none}.screen.active{display:block}
+
+/* UPLOAD */
+.up-wrap{max-width:800px;margin:0 auto;padding:40px 20px}
+.hero{text-align:center;margin-bottom:36px}
+.hero h1{font-size:30px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
+.hero p{color:var(--text2);font-size:15px}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;margin-bottom:18px}
+.ctitle{font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px}
+
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.fg{display:flex;flex-direction:column;gap:5px}
+.fg label{font-size:13px;font-weight:500;color:var(--text2)}
+.fg input,.fg select{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 13px;color:var(--text);font-size:14px;outline:none;transition:border-color .2s}
+.fg input:focus,.fg select:focus{border-color:var(--accent)}
+.fg input::placeholder{color:var(--text2)}
+.req{color:var(--danger)}
+
+/* TYPE TOGGLE */
+.ttoggle{display:flex;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:4px;margin-bottom:14px}
+.tbtn{flex:1;padding:9px;border:none;background:transparent;color:var(--text2);border-radius:7px;cursor:pointer;font-size:14px;font-weight:500;transition:all .2s}
+.tbtn.active{background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(88,166,255,.3)}
+
+/* SKILL BTN */
+.skill-btn{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 13px;color:var(--text);font-size:14px;cursor:pointer;width:100%;text-align:left;display:flex;align-items:center;justify-content:space-between;transition:border-color .2s}
+.skill-btn:hover{border-color:var(--accent)}
+.sk-cnt{background:var(--accent);color:#fff;border-radius:12px;padding:2px 9px;font-size:12px;font-weight:600}
+
+/* DROPZONE */
+.dz{border:2px dashed var(--border);border-radius:12px;padding:36px;text-align:center;cursor:pointer;transition:all .2s;position:relative}
+.dz:hover,.dz.over{border-color:var(--accent);background:rgba(88,166,255,.05)}
+.dz input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.dz-icon{font-size:34px;margin-bottom:10px;color:var(--text2)}
+.dz-text{font-size:15px;font-weight:500;margin-bottom:4px}
+.dz-hint{font-size:13px;color:var(--text2)}
+.dz.ok{border-color:var(--success);background:rgba(63,185,80,.05)}
+.dz.ok .dz-icon{color:var(--success)}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:8px;border:none;cursor:pointer;font-size:14px;font-weight:500;transition:all .2s;text-decoration:none}
+.btn-p{background:var(--accent);color:#fff}.btn-p:hover{opacity:.9;transform:translateY(-1px)}
+.btn-p:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.btn-s{background:var(--surface2);border:1px solid var(--border);color:var(--text)}.btn-s:hover{border-color:var(--accent);color:var(--accent)}
+.btn-g{background:var(--success);color:#fff}.btn-g:hover{opacity:.9}
+.btn-lg{padding:13px 26px;font-size:15px}.btn-full{width:100%;justify-content:center}
+.btn-sm{padding:5px 11px;font-size:12px}
+
+/* RESULTS */
+.rpage{padding:20px 24px}
+.rhdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.rtitle{font-size:18px;font-weight:700}.rmeta{font-size:13px;color:var(--text2);margin-top:2px}
+.ract{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+
+/* TABS */
+.tabs{display:flex;gap:3px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:4px;margin-bottom:18px;flex-wrap:wrap;overflow-x:auto}
+.tab{padding:7px 14px;border-radius:7px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text2);transition:all .2s;white-space:nowrap}
+.tab.active{background:var(--accent);color:#fff}
+.tab:hover:not(.active){color:var(--text);background:var(--surface2)}
+.tc{display:none}.tc.active{display:block}
+
+/* TABLES */
+.tw{overflow-x:auto;border-radius:10px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead tr{background:var(--surface2)}
+thead th{padding:9px 11px;text-align:left;font-weight:600;color:var(--text2);white-space:nowrap;border-bottom:1px solid var(--border)}
+tbody tr{border-bottom:1px solid var(--border)}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:rgba(88,166,255,.04)}
+tbody td{padding:8px 11px;white-space:nowrap}
+.trow{background:var(--surface2)!important;font-weight:700}
+.att-row{background:rgba(248,81,73,.05)!important}
+
+/* BADGES */
+.bs{display:inline-flex;align-items:center;padding:2px 9px;border-radius:12px;font-size:12px;font-weight:600;white-space:nowrap}
+.b-best{background:rgba(63,185,80,.15);color:var(--best);border:1px solid rgba(63,185,80,.3)}
+.b-good{background:rgba(88,166,255,.15);color:var(--good);border:1px solid rgba(88,166,255,.3)}
+.b-avg{background:rgba(210,153,34,.15);color:var(--avg);border:1px solid rgba(210,153,34,.3)}
+.b-poor{background:rgba(248,81,73,.15);color:var(--poor);border:1px solid rgba(248,81,73,.3)}
+.b-cs{background:rgba(63,185,80,.1);color:var(--success);font-size:11px;padding:2px 7px;border-radius:5px}
+.b-ncs{background:rgba(248,81,73,.1);color:var(--danger);font-size:11px;padding:2px 7px;border-radius:5px}
+.b-cc{background:rgba(88,166,255,.1);color:var(--accent);font-size:11px;padding:2px 7px;border-radius:5px}
+.b-ncc{background:rgba(210,153,34,.1);color:var(--warning);font-size:11px;padding:2px 7px;border-radius:5px}
+
+/* PROGRESS */
+.pbar{display:flex;align-items:center;gap:7px}
+.ptrack{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;min-width:55px}
+.pfill{height:100%;border-radius:3px}
+
+/* METRIC CARDS */
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:11px;margin-bottom:18px}
+.mc{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px}
+.mc .lbl{font-size:12px;color:var(--text2);margin-bottom:5px}
+.mc .val{font-size:23px;font-weight:700}
+.mc .sub{font-size:12px;color:var(--text2);margin-top:2px}
+
+/* DASHBOARD */
+.dpage{padding:20px 24px}
+.dhdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+.cc{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px}
+.cc h3{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:14px}
+.cc canvas{max-height:260px}
+.fw{grid-column:1/-1}
+
+/* FILTERS */
+.filt{display:flex;gap:11px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.filt select{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 11px;color:var(--text);font-size:13px;outline:none;cursor:pointer}
+.filt select:focus{border-color:var(--accent)}
+.flbl{font-size:13px;color:var(--text2);font-weight:500}
+
+/* MODAL */
+.moverlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px}
+.moverlay.active{display:flex}
+.mdialog{background:var(--surface);border:1px solid var(--border);border-radius:14px;width:100%;max-width:660px;max-height:82vh;display:flex;flex-direction:column}
+.mhdr{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.mhdr h2{font-size:16px;font-weight:700}
+.mclose{background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;padding:4px;line-height:1}
+.msearch{padding:14px 22px;border-bottom:1px solid var(--border)}
+.msearch input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 13px;color:var(--text);font-size:14px;outline:none}
+.msearch input:focus{border-color:var(--accent)}
+.matop{padding:8px 22px;border-bottom:1px solid var(--border);display:flex;gap:9px;align-items:center}
+.mbody{padding:14px 22px;overflow-y:auto;flex:1}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(188px,1fr));gap:6px}
+.si{display:flex;align-items:center;gap:7px;padding:7px 9px;border-radius:7px;cursor:pointer;transition:background .15s;user-select:none}
+.si:hover{background:var(--surface2)}
+.si input[type=checkbox]{accent-color:var(--accent);width:14px;height:14px;cursor:pointer;flex-shrink:0}
+.si span{font-size:13px;line-height:1.3}
+.si.hidden{display:none}
+.mfoot{padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.scnt{font-size:13px;color:var(--text2)}
+
+/* MISC */
+.toast{position:fixed;bottom:22px;right:22px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px 17px;font-size:14px;z-index:2000;animation:slin .3s ease;display:flex;align-items:center;gap:9px;box-shadow:0 4px 20px rgba(0,0,0,.5)}
+.toast.ok{border-color:var(--success)}.toast.err{border-color:var(--danger)}
+@keyframes slin{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
+.stitle{font-size:14px;font-weight:600;margin:18px 0 11px;padding-bottom:7px;border-bottom:1px solid var(--border)}
+.tag{display:inline-flex;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:3px 9px;font-size:12px;color:var(--text2);margin:2px}
+.empty{text-align:center;padding:40px;color:var(--text2)}
+.info-box{background:rgba(88,166,255,.08);border:1px solid rgba(88,166,255,.25);border-radius:8px;padding:11px 15px;font-size:13px;color:var(--accent);margin-bottom:14px}
+.warn-box{background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.3);border-radius:8px;padding:11px 15px;font-size:13px;color:var(--danger);margin-bottom:14px}
+
+@media(max-width:620px){
+  .frow{grid-template-columns:1fr}
+  .cgrid{grid-template-columns:1fr}
+  .rhdr{flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="logo">
+    <div class="logo-icon">🤖</div>
+    <span>Career247</span>
+    <span class="pill">B2I Analytics Bot</span>
+  </div>
+  <div id="hdr-right" style="font-size:13px;color:var(--text2)"></div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 1 — UPLOAD
+══════════════════════════════════════════ -->
+<div id="s-upload" class="screen active">
+  <div class="up-wrap">
+    <div class="hero">
+      <h1>B2I Analytics Bot</h1>
+      <p>Upload your raw CSV, choose report type, and get instant analysis — for your internal team and TPOs.</p>
+    </div>
+
+    <!-- CONFIG -->
+    <div class="card">
+      <div class="ctitle">📋 Report Configuration</div>
+      <div class="frow">
+        <div class="fg">
+          <label>College Name <span class="req">*</span></label>
+          <input id="clg" type="text" placeholder="e.g. KLE Technological University" oninput="chkReady()"/>
+        </div>
+        <div class="fg">
+          <label>Course / Report Name <span class="req">*</span></label>
+          <input id="rpt" type="text" placeholder="e.g. Batch 2026 — Placement Drive" oninput="chkReady()"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- TYPE -->
+    <div class="card">
+      <div class="ctitle">📁 Report Type</div>
+      <div class="ttoggle">
+        <button class="tbtn active" data-t="prime"       onclick="setType('prime')">🎯 Prime</button>
+        <button class="tbtn"         data-t="assessment" onclick="setType('assessment')">📝 Assessment</button>
+      </div>
+
+      <div id="prime-opts">
+        <div class="fg">
+          <label>Skills to Analyse <span class="req">*</span></label>
+          <button class="skill-btn" onclick="openModal()">
+            <span id="sk-lbl">🔍 Click to select skills…</span>
+            <span id="sk-badge" class="sk-cnt" style="display:none">0 selected</span>
+          </button>
+        </div>
+        <div id="sk-tags" style="margin-top:9px"></div>
+      </div>
+
+      <div id="ass-opts" style="display:none">
+        <div class="info-box">ℹ️ Assessment mode auto-detects skill columns from the CSV header. No extra config needed.</div>
+      </div>
+    </div>
+
+    <!-- FILE -->
+    <div class="card">
+      <div class="ctitle">📤 Upload Raw Data File</div>
+      <div class="dz" id="dz"
+           ondrop="onDrop(event)" ondragover="onDragOver(event)" ondragleave="onDragLeave()">
+        <input type="file" accept=".csv,.xlsx,.xls" onchange="onFileSelect(event)"/>
+        <div class="dz-icon" id="dz-icon">📂</div>
+        <div class="dz-text" id="dz-txt">Drag &amp; drop your CSV / Excel here</div>
+        <div class="dz-hint" id="dz-hint">or click to browse — .csv, .xlsx, .xls supported</div>
+      </div>
+    </div>
+
+    <button class="btn btn-p btn-lg btn-full" id="gen-btn" disabled onclick="doGenerate()">
+      ⚡ Generate Report
+    </button>
+    <div id="up-err" style="margin-top:10px;color:var(--danger);font-size:13px;display:none"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 2 — RESULTS
+══════════════════════════════════════════ -->
+<div id="s-results" class="screen">
+  <div class="rpage">
+    <div class="rhdr">
+      <div>
+        <div class="rtitle" id="r-title">Report</div>
+        <div class="rmeta" id="r-meta"></div>
+      </div>
+      <div class="ract">
+        <button class="btn btn-s" onclick="goHome()">← New Report</button>
+        <button class="btn btn-g" onclick="doDownload()">⬇️ Download Excel</button>
+        <button class="btn btn-p" onclick="goDash()">📊 TPO Dashboard</button>
+      </div>
+    </div>
+    <div id="r-cards"></div>
+    <div class="tabs" id="r-tabs"></div>
+    <div id="r-contents"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 3 — DASHBOARD
+══════════════════════════════════════════ -->
+<div id="s-dash" class="screen">
+  <div class="dpage">
+    <div class="dhdr">
+      <div>
+        <div class="rtitle" id="d-title">TPO Dashboard</div>
+        <div class="rmeta" id="d-meta"></div>
+      </div>
+      <div class="ract">
+        <button class="btn btn-s" onclick="goResults()">← Back to Report</button>
+        <button class="btn btn-s" onclick="goHome()">🏠 Home</button>
+      </div>
+    </div>
+    <div class="mgrid" id="d-metrics"></div>
+    <div class="filt" id="d-filt"></div>
+    <div class="cgrid" id="d-charts"></div>
+    <div id="d-board"></div>
+    <div id="d-att"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SKILL MODAL
+══════════════════════════════════════════ -->
+<div class="moverlay" id="modal">
+  <div class="mdialog">
+    <div class="mhdr">
+      <h2>🎯 Select Skills to Analyse</h2>
+      <button class="mclose" onclick="closeModal()">✕</button>
+    </div>
+    <div class="msearch">
+      <input id="mq" placeholder="Search skills…" oninput="filterSk(this.value)"/>
+    </div>
+    <div class="matop">
+      <button class="btn btn-sm btn-s" onclick="selAll()">Select All</button>
+      <button class="btn btn-sm btn-s" onclick="clrAll()">Clear All</button>
+      <span id="mcnt" style="font-size:12px;color:var(--text2);margin-left:auto">0 selected</span>
+    </div>
+    <div class="mbody">
+      <div class="sgrid" id="sgrid"></div>
+    </div>
+    <div class="mfoot">
+      <span class="scnt" id="mfcnt">No skills selected</span>
+      <button class="btn btn-p" onclick="confirmSk()">✓ Confirm Selection</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// SKILL LIST
+// ═══════════════════════════════════════════════
+const SK = [
+  "AMAZON User Segmentation","AMCAT","AWS","Accenture",
+  "Accenture Interview Preparation","Adobe Interview Preparation",
+  "Amazon Interview Preparation","American Express Data Analysis",
+  "Android Calculator Project","Automata Fix","Basic Coding Course",
+  "Basic Coding in C/C++","Basic Coding in Java","Basic Coding in Python",
+  "Bharat Gas Agency Project","Big Basket","Bootstrap",
+  "Bootstrap Project PhonePe","Breast Cancer Detection","C Programming",
+  "CPP","CSS","Capgemini Exceller","Capgemini Interview Preparation",
+  "Cisco Interview Preparation","Cloud Computing","CoCubes",
+  "Cognizant GenC","Cognizant GenC Next","Cognizant GenC Next Elevate",
+  "Cognizant Interview Preparation","Competitive Coding","Computer Networks",
+  "Cryptarithmetic","Cyber Security","DBMS",
+  "DSA for service based companies","DSA in C","DSA in C++",
+  "DSA in JAVA","DSA in Python","DXC","DXC Interview Preparation",
+  "Data Analytics","Data Interpretation","Data Science","Deloitte",
+  "Deloitte Interview Preparation","Dogs and Cats Prediction Project",
+  "Dynamic Ping Pong","Essay Writing","Ethical Hacking","ExpressJs",
+  "ExpressJs - Pokemon Project","Facebook ads","First Naukri","Flexbox",
+  "Game Based Aptitude","Git","GitHub","Goldman Sachs",
+  "Goldman Sachs Interview Preparation","Group Discussion",
+  "Guesstimates and Case Study","HCL","HCL Interview Preparation",
+  "HR Interview Course","HSBC","HTML","HackerEarth","HackerRank",
+  "Hexaware","IBM","Infosys","Infosys Interview Preparation",
+  "Infosys SP and DSE","Infosys SP and DSE Interview Preparation",
+  "InfyTQ","InfyTQ Interview Preparation","Intermediate Coding Course",
+  "Interview Experience Product Based","Interview Experience Service Based",
+  "JP Morgan","Java","Java Script Es6","LTI","LTI Interview Preparation",
+  "Machine Learning & AI","Mettl","Microsoft","MindTree",
+  "Mindtree Interview Preparation","Mongo DB","Mphasis","MyAnatomy",
+  "NLP and Deep Learning","NTT Data Interview Preparation",
+  "Netflix Movie Recommendation","NodeJs","OS",
+  "PayPal Interview Preparation","Persistent",
+  "Power BI & Business Intelligence","Psychometric Test","Puzzle",
+  "Python","QA Analyst","React","Reliance Jio","Resume",
+  "Robert Bosch","SDLC","SQL","Spotify Clone Project","Statistics",
+  "TATA Elxsi","TCS BPS","TCS Codevita","TCS Digital",
+  "TCS Interview Preparation","TCS NQT","TCS NQT Prime","Tableau",
+  "Tech Mahindra","Tech Mahindra Interview Preparation","Verbal",
+  "Virtusa","Visual Reasoning","WeCP","Wipro Interview Preparation",
+  "Wipro NLTH","Wipro WILP","ZS Associates","ZS Interview Preparation",
+  "Zoho","Zomato Review Analysis","jQuery","AMDOCS","Adobe",
+  "Bain & Company","Boston and consulting group","C New Course",
+  "Cisco","Cognizant","Deloitte NLA","EY","Express JS Dice Project",
+  "Full Stack Web development MERN Stack","Gen AI","Google",
+  "HR Course","Hexaware Interview Preparation","HirePro",
+  "IBM interview prepration","Intermediate Coding in C/C++",
+  "Intermediate Coding in Java","Intermediate Coding in Python",
+  "Josh Technologies","KPMG","Logical Reasoning","Make My Trip",
+  "McKinsey & Company","Microsoft Interview Preparation",
+  "Mphasis Interview Preparation","MuSigma","NTT Data",
+  "PWC Interview Preparation","Persistent Interview Preparation",
+  "Pokemon Prediction","PsuedoCode","Quantitative Aptitude",
+  "Reliance Jio Interview Preparation","Versant Test","Wiley Edge",
+  "Zensar Interview Preparation","Zoho Interview Preparation"
+];
+
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+const S = {
+  type: 'prime',
+  college: '', report: '',
+  selSkills: [],
+  file: null,
+  data: null
+};
+const charts = {};
+
+// ═══════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function goHome(){ show('s-upload'); S.data=null; }
+function goResults(){ show('s-results'); }
+function goDash(){ show('s-dash'); renderDash(); }
+
+// ═══════════════════════════════════════════════
+// TYPE
+// ═══════════════════════════════════════════════
+function setType(t){
+  S.type=t;
+  document.querySelectorAll('.tbtn').forEach(b=>b.classList.toggle('active',b.dataset.t===t));
+  document.getElementById('prime-opts').style.display=t==='prime'?'block':'none';
+  document.getElementById('ass-opts').style.display=t==='assessment'?'block':'none';
+  chkReady();
+}
+
+// ═══════════════════════════════════════════════
+// SKILL MODAL
+// ═══════════════════════════════════════════════
+function openModal(){
+  buildGrid();
+  document.getElementById('modal').classList.add('active');
+}
+function closeModal(){ document.getElementById('modal').classList.remove('active'); }
+function buildGrid(){
+  document.getElementById('mq').value='';
+  document.getElementById('sgrid').innerHTML=SK.map(s=>`
+    <label class="si">
+      <input type="checkbox" value="${esc(s)}" ${S.selSkills.includes(s)?'checked':''}
+        onchange="togSk(this.value,this.checked)">
+      <span>${s}</span>
+    </label>`).join('');
+  updMCnt();
+}
+function esc(s){ return s.replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function togSk(s,chk){
+  s = SK.find(x=>x===s) || s;
+  if(chk && !S.selSkills.includes(s)) S.selSkills.push(s);
+  if(!chk){ const i=S.selSkills.indexOf(s); if(i>-1) S.selSkills.splice(i,1); }
+  updMCnt();
+}
+function updMCnt(){
+  const n=S.selSkills.length;
+  document.getElementById('mcnt').textContent=n+' selected';
+  document.getElementById('mfcnt').textContent=n===0?'No skills selected':n+' skill(s) selected';
+}
+function filterSk(q){
+  q=q.toLowerCase();
+  document.querySelectorAll('.si').forEach(el=>{
+    el.classList.toggle('hidden',!el.querySelector('span').textContent.toLowerCase().includes(q));
+  });
+}
+function selAll(){
+  document.querySelectorAll('.si:not(.hidden) input').forEach(cb=>{
+    if(!cb.checked){ cb.checked=true; togSk(cb.value,true); }
+  });
+}
+function clrAll(){
+  S.selSkills=[];
+  document.querySelectorAll('.si input').forEach(cb=>cb.checked=false);
+  updMCnt();
+}
+function confirmSk(){
+  closeModal();
+  updSkBtn();
+  chkReady();
+}
+function updSkBtn(){
+  const n=S.selSkills.length;
+  document.getElementById('sk-lbl').textContent=n>0?n+' skill(s) selected':'🔍 Click to select skills…';
+  const b=document.getElementById('sk-badge');
+  b.style.display=n>0?'inline':'none';
+  b.textContent=n+' selected';
+  document.getElementById('sk-tags').innerHTML=
+    S.selSkills.slice(0,6).map(s=>`<span class="tag">✓ ${s}</span>`).join('')+
+    (n>6?`<span class="tag">+${n-6} more</span>`:'');
+}
+
+// ═══════════════════════════════════════════════
+// FILE UPLOAD
+// ═══════════════════════════════════════════════
+function onDragOver(e){ e.preventDefault(); document.getElementById('dz').classList.add('over'); }
+function onDragLeave(){ document.getElementById('dz').classList.remove('over'); }
+function onDrop(e){
+  e.preventDefault();
+  document.getElementById('dz').classList.remove('over');
+  const f=e.dataTransfer.files[0];
+  if(f) loadFile(f);
+}
+function onFileSelect(e){ const f=e.target.files[0]; if(f) loadFile(f); }
+function loadFile(f){
+  const ext=f.name.split('.').pop().toLowerCase();
+  if(!['csv','xlsx','xls'].includes(ext)){ showErr('Please upload .csv, .xlsx, or .xls'); return; }
+  S.file=f;
+  const dz=document.getElementById('dz');
+  dz.classList.add('ok');
+  document.getElementById('dz-icon').textContent='✅';
+  document.getElementById('dz-txt').textContent=f.name;
+  document.getElementById('dz-hint').textContent=(f.size/1024).toFixed(1)+' KB — ready to process';
+  chkReady();
+}
+function chkReady(){
+  const ok = document.getElementById('clg').value.trim() &&
+              document.getElementById('rpt').value.trim() &&
+              S.file &&
+              (S.type==='assessment' || S.selSkills.length>0);
+  document.getElementById('gen-btn').disabled=!ok;
+}
+
+// ═══════════════════════════════════════════════
+// GENERATE REPORT
+// ═══════════════════════════════════════════════
+async function doGenerate(){
+  S.college=document.getElementById('clg').value.trim();
+  S.report=document.getElementById('rpt').value.trim();
+  hideErr();
+  document.getElementById('gen-btn').disabled=true;
+  document.getElementById('gen-btn').textContent='⏳ Processing…';
+  try{
+    const ext=S.file.name.split('.').pop().toLowerCase();
+    let rows = ext==='csv' ? await parseCSV(S.file) : await parseXLSX(S.file);
+    if(!rows||rows.length<2) throw new Error('File is empty or unreadable');
+    S.data = S.type==='prime' ? procPrime(rows) : procAssess(rows);
+    renderResults();
+    show('s-results');
+  }catch(e){
+    showErr('Error: '+e.message);
+    console.error(e);
+  }finally{
+    document.getElementById('gen-btn').disabled=false;
+    document.getElementById('gen-btn').textContent='⚡ Generate Report';
+  }
+}
+function parseCSV(f){
+  return new Promise((res,rej)=>{
+    Papa.parse(f,{header:false,skipEmptyLines:true,
+      complete:r=>res(r.data), error:rej});
+  });
+}
+function parseXLSX(f){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=e=>{
+      try{
+        const wb=XLSX.read(e.target.result,{type:'array'});
+        res(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''}));
+      }catch(e2){rej(e2);}
+    };
+    r.onerror=rej;
+    r.readAsArrayBuffer(f);
+  });
+}
+
+// ═══════════════════════════════════════════════
+// PRIME PROCESSING
+// ═══════════════════════════════════════════════
+function procPrime(rows){
+  // Find header row
+  let hi=0;
+  for(let i=0;i<Math.min(rows.length,10);i++){
+    const r=rows[i];
+    if(r.some(c=>typeof c==='string'&&
+        (c.toLowerCase().includes('first name')||c.toLowerCase().includes('registration')||
+         c.toLowerCase().includes('user id')))){
+      hi=i; break;
+    }
+  }
+  const hdrs=rows[hi].map(h=>String(h||'').trim());
+  const hl=hdrs.map(h=>h.toLowerCase());
+  const drows=rows.slice(hi+1).filter(r=>r.some(c=>c!==''&&c!==null&&c!==undefined));
+
+  // Column map
+  const C={};
+  C.fn  = hl.findIndex(h=>h.includes('first name')||h==='first');
+  C.ln  = hl.findIndex(h=>h.includes('last name')||h==='last');
+  C.reg = hl.findIndex(h=>h.includes('registration'));
+  C.em  = hl.findIndex(h=>h.includes('email'));
+  C.mob = hl.findIndex(h=>h.includes('mobile')||h.includes('phone'));
+  C.br  = hl.findIndex(h=>h.includes('branch'));
+  C.yr  = hl.findIndex(h=>h.includes('year')&&h.includes('pass'));
+  C.cs  = hl.findIndex(h=>h.includes('courses started')||(h==='started'));
+  C.cc  = hl.findIndex(h=>h.includes('courses completed')&&!h.includes('yet'));
+  C.op  = hl.findIndex(h=>h.includes('overall')&&(h.includes('%')||h.includes('completion')));
+
+  // Skill column index map
+  const ski={};
+  S.selSkills.forEach(sk=>{
+    let idx=hdrs.findIndex(h=>h.toLowerCase()===sk.toLowerCase());
+    if(idx===-1) idx=hdrs.findIndex(h=>h.toLowerCase().includes(sk.toLowerCase()));
+    ski[sk]=idx;
+  });
+
+  const g=(row,i)=>i>=0?String(row[i]||'').trim():'';
+  const n=(row,i)=>i>=0?(parseFloat(row[i])||0):0;
+
+  const students=drows.map((row,i)=>{
+    const fn=g(row,C.fn), ln=g(row,C.ln);
+    const cs=n(row,C.cs), cc=n(row,C.cc), op=n(row,C.op);
+    const scores={};
+    S.selSkills.forEach(sk=>{ scores[sk]=n(row,ski[sk]); });
+    const skCS={}, skCC={};
+    S.selSkills.forEach(sk=>{
+      skCS[sk]=scores[sk]>=10?'COURSE STARTED':'COURSE YET TO START';
+      skCC[sk]=scores[sk]===100?'COURSE COMPLETED':'COURSE YET TO COMPLETE';
+    });
+    return{
+      i:i+1, fn, ln, name:[fn,ln].filter(Boolean).join(' '),
+      reg:g(row,C.reg), email:g(row,C.em), mob:g(row,C.mob),
+      branch:g(row,C.br), year:g(row,C.yr),
+      cs, cc, op, scores, skCS, skCC,
+      oCS:cs>=1?'COURSE STARTED':'COURSE YET TO START',
+      oCC:cc>=1?'COURSE COMPLETED':'COURSE YET TO BE COMPLETED',
+      att:cs===0||op<10
+    };
+  }).filter(s=>s.fn||s.reg||s.email);
+  students.forEach((s,i)=>s.i=i+1);
+
+  const brs=[...new Set(students.map(s=>s.branch).filter(Boolean))].sort();
+  const bsum=(condFn,l1,l2)=>mkBSum(students,brs,condFn,l1,l2);
+
+  return{
+    type:'prime', students, brs, skills:S.selSkills,
+    oSt: bsum(s=>s.cs>=1,'COURSE STARTED','COURSE YET TO START'),
+    oCo: bsum(s=>s.cc>=1,'COURSE COMPLETED','COURSE YET TO BE COMPLETED'),
+    skSum: Object.fromEntries(S.selSkills.map(sk=>[sk,{
+      st: bsum(s=>s.scores[sk]>=10,'COURSE STARTED','COURSE YET TO START'),
+      co: bsum(s=>s.scores[sk]===100,'COURSE COMPLETED','COURSE YET TO COMPLETE')
+    }])),
+    att: students.filter(s=>s.att),
+    tot: students.length,
+    totSt: students.filter(s=>s.cs>=1).length,
+    totCo: students.filter(s=>s.cc>=1).length
+  };
+}
+
+function mkBSum(students,brs,condFn,l1,l2){
+  const rows=brs.map(b=>{
+    const bs=students.filter(s=>s.branch===b);
+    const c1=bs.filter(condFn).length;
+    return{b,c1,c2:bs.length-c1,t:bs.length};
+  }).filter(r=>r.t>0);
+  const g={b:'Grand Total',
+    c1:rows.reduce((a,r)=>a+r.c1,0),
+    c2:rows.reduce((a,r)=>a+r.c2,0),
+    t:rows.reduce((a,r)=>a+r.t,0)};
+  return{l1,l2,rows,g};
+}
+
+// ═══════════════════════════════════════════════
+// ASSESSMENT PROCESSING
+// ═══════════════════════════════════════════════
+function procAssess(rows){
+  let hi=0;
+  for(let i=0;i<Math.min(rows.length,10);i++){
+    const r=rows[i];
+    if(r.some(c=>typeof c==='string'&&
+        (c.toLowerCase().includes('student')||c.toLowerCase().includes('email')||
+         c.toLowerCase().includes('branch')||c.toLowerCase().includes('reg')))){
+      hi=i; break;
+    }
+  }
+  const hdrs=rows[hi].map(h=>String(h||'').trim());
+  const hl=hdrs.map(h=>h.toLowerCase());
+  const drows=rows.slice(hi+1).filter(r=>r.some(c=>c!==''&&c!==null&&c!==undefined));
+
+  const C={};
+  C.nm =hl.findIndex(h=>h.includes('student_name')||h==='student name'||h.includes('student')||h==='name');
+  C.em =hl.findIndex(h=>h.includes('email'));
+  C.reg=hl.findIndex(h=>h.includes('reg')||h.includes('college_reg'));
+  C.bat=hl.findIndex(h=>h.includes('batch'));
+  C.br =hl.findIndex(h=>h.includes('branch'));
+  C.sc =hl.findIndex(h=>h==='score'||h==='total score'||(h.includes('total')&&h.includes('score')&&!h.match(/\(\d+\)/)));
+
+  // Detect skill cols: "(digits)" in header
+  const skCols=[];
+  hdrs.forEach((h,i)=>{
+    const m=h.match(/\((\d+)\)$/);
+    if(m&&i!==C.sc){
+      skCols.push({name:h.replace(/\(\d+\)$/,'').trim(),hdr:h,max:parseInt(m[1]),idx:i});
+    }
+  });
+  const totMax=skCols.reduce((s,c)=>s+c.max,0);
+
+  const g=(row,i)=>i>=0?String(row[i]||'').trim():'';
+  const n=(row,i)=>i>=0?(parseFloat(row[i])||0):0;
+
+  const students=drows.map((row,i)=>{
+    const sc={};
+    skCols.forEach(c=>{sc[c.name]=n(row,c.idx);});
+    const total=C.sc>=0?n(row,C.sc):Object.values(sc).reduce((a,v)=>a+v,0);
+    const pct=totMax>0?(total/totMax*100):0;
+    return{
+      i:i+1, name:g(row,C.nm), email:g(row,C.em),
+      reg:g(row,C.reg), batch:g(row,C.bat), branch:g(row,C.br),
+      sc, total, totMax, pct, status:getStatus(pct)
+    };
+  }).filter(s=>s.name||s.reg||s.email);
+  students.forEach((s,i)=>s.i=i+1);
+
+  const sorted=[...students].sort((a,b)=>b.total-a.total);
+  const brs=[...new Set(students.map(s=>s.branch).filter(Boolean))].sort();
+
+  const bsum=brs.map(b=>{
+    const bs=students.filter(s=>s.branch===b);
+    const stc={BEST:0,GOOD:0,AVERAGE:0,POOR:0};
+    bs.forEach(s=>stc[s.status]++);
+    return{b,tot:bs.length,
+      avg:(bs.reduce((a,s)=>a+s.total,0)/bs.length).toFixed(1),
+      avgP:(bs.reduce((a,s)=>a+s.pct,0)/bs.length).toFixed(1),...stc};
+  });
+
+  const stc={BEST:0,GOOD:0,AVERAGE:0,POOR:0};
+  students.forEach(s=>stc[s.status]++);
+
+  return{
+    type:'assessment', students, sorted, brs, skCols, totMax, bsum, stc,
+    tot:students.length,
+    avgSc:(students.reduce((a,s)=>a+s.total,0)/students.length)||0,
+    avgP:(students.reduce((a,s)=>a+s.pct,0)/students.length)||0,
+    top:sorted[0]||null
+  };
+}
+function getStatus(p){
+  if(p<=30) return 'POOR';
+  if(p<=60) return 'AVERAGE';
+  if(p<=80) return 'GOOD';
+  return 'BEST';
+}
+function stColor(s){
+  return{BEST:'var(--best)',GOOD:'var(--good)',AVERAGE:'var(--avg)',POOR:'var(--poor)'}[s]||'var(--text)';
+}
+function stClass(s){
+  return{BEST:'b-best',GOOD:'b-good',AVERAGE:'b-avg',POOR:'b-poor'}[s]||'';
+}
+
+// ═══════════════════════════════════════════════
+// RENDER RESULTS
+// ═══════════════════════════════════════════════
+function renderResults(){
+  const d=S.data;
+  const dt=new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+  document.getElementById('r-title').textContent=S.college+(S.report?' — '+S.report:'');
+  document.getElementById('r-meta').textContent=
+    (d.type==='prime'?'🎯 Prime Report':'📝 Assessment Report')+
+    ' · '+d.tot+' students · '+dt;
+  if(d.type==='prime') renderPrimeRes(d);
+  else renderAssRes(d);
+}
+
+// ─── PRIME RESULTS ─────────────────────────────
+function renderPrimeRes(d){
+  const stPct=(d.totSt/d.tot*100).toFixed(1);
+  const coPct=(d.totCo/d.tot*100).toFixed(1);
+  document.getElementById('r-cards').innerHTML=`<div class="mgrid">
+    <div class="mc"><div class="lbl">Total Students</div><div class="val" style="color:var(--accent)">${d.tot}</div><div class="sub">${d.brs.length} branches</div></div>
+    <div class="mc"><div class="lbl">Course Started</div><div class="val" style="color:var(--success)">${d.totSt}</div><div class="sub">${stPct}% of total</div></div>
+    <div class="mc"><div class="lbl">Course Completed</div><div class="val" style="color:var(--accent2)">${d.totCo}</div><div class="sub">${coPct}% of total</div></div>
+    <div class="mc"><div class="lbl">Needs Attention</div><div class="val" style="color:var(--danger)">${d.att.length}</div><div class="sub">0 courses or &lt;10%</div></div>
+    <div class="mc"><div class="lbl">Skills Analysed</div><div class="val" style="color:var(--warning)">${d.skills.length}</div><div class="sub">selected skills</div></div>
+  </div>`;
+
+  const tabNames=['📋 Student Report','📊 Overall Summary',
+    ...d.skills.map(s=>`🎯 ${s.length>18?s.slice(0,17)+'…':s}`),
+    '⚠️ Needs Attention'];
+
+  document.getElementById('r-tabs').innerHTML=tabNames.map((t,i)=>
+    `<div class="tab ${i===0?'active':''}" onclick="swTab(${i})">${t}</div>`).join('');
+
+  // Build student table
+  const skHdrs=d.skills.map(s=>`<th title="${s}">${s.length>14?s.slice(0,13)+'…':s}</th>`).join('');
+  const skCSH=d.skills.map(s=>`<th title="${s} — CS">${s.length>12?s.slice(0,11)+'…':s} CS</th>`).join('');
+  const skCCH=d.skills.map(s=>`<th title="${s} — CC">${s.length>12?s.slice(0,11)+'…':s} CC</th>`).join('');
+
+  const srows=d.students.map(s=>{
+    const skSC=d.skills.map(sk=>{
+      const v=s.scores[sk]; const cl=v>=10?'var(--success)':v>0?'var(--warning)':'var(--text2)';
+      return`<td style="color:${cl}">${v>0?v.toFixed(2)+'%':'—'}</td>`;
+    }).join('');
+    const skCS=d.skills.map(sk=>
+      `<td><span class="${s.skCS[sk]==='COURSE STARTED'?'b-cs':'b-ncs'}">${s.skCS[sk]==='COURSE STARTED'?'✓ Started':'✗ Not Yet'}</span></td>`
+    ).join('');
+    const skCC=d.skills.map(sk=>
+      `<td><span class="${s.skCC[sk]==='COURSE COMPLETED'?'b-cc':'b-ncc'}">${s.skCC[sk]==='COURSE COMPLETED'?'✓ Done':'○ Pending'}</span></td>`
+    ).join('');
+    return`<tr ${s.att?'class="att-row"':''}>
+      <td>${s.i}</td><td><strong>${s.fn}</strong>${s.ln?' '+s.ln:''}</td>
+      <td>${s.reg}</td><td>${s.email}</td><td>${s.mob}</td>
+      <td>${s.branch}</td><td>${s.year}</td>
+      <td>${s.cs}</td><td>${s.cc}</td>
+      ${skSC}
+      <td><span class="${s.oCS==='COURSE STARTED'?'b-cs':'b-ncs'}">${s.oCS==='COURSE STARTED'?'✓ Started':'✗ Not Yet'}</span></td>
+      ${skCS}
+      <td><span class="${s.oCC==='COURSE COMPLETED'?'b-cc':'b-ncc'}">${s.oCC==='COURSE COMPLETED'?'✓ Done':'○ Pending'}</span></td>
+      ${skCC}
+    </tr>`;
+  }).join('');
+
+  let html=`<div class="tc active" id="tc0">
+    <div class="tw"><table>
+      <thead><tr>
+        <th>#</th><th>Name</th><th>Reg No</th><th>Email</th><th>Mobile</th>
+        <th>Branch</th><th>Year</th><th>Cs.Started</th><th>Cs.Completed</th>
+        ${skHdrs}
+        <th>Overall CS</th>${skCSH}
+        <th>Overall CC</th>${skCCH}
+      </tr></thead>
+      <tbody>${srows}</tbody>
+    </table></div>
+  </div>`;
+
+  // Tab 1 — Overall Summary
+  html+=`<div class="tc" id="tc1">
+    <div class="stitle">📊 Overall Course Started Summary</div>
+    ${mkSumTbl(d.oSt)}
+    <div class="stitle" style="margin-top:22px">📊 Overall Course Completion Summary</div>
+    ${mkSumTbl(d.oCo)}
+  </div>`;
+
+  // Per-skill tabs
+  d.skills.forEach((sk,i)=>{
+    html+=`<div class="tc" id="tc${i+2}">
+      <div class="stitle">🎯 ${sk} — Course Started Summary</div>
+      ${mkSumTbl(d.skSum[sk].st)}
+      <div class="stitle" style="margin-top:22px">🎯 ${sk} — Course Completion Summary</div>
+      ${mkSumTbl(d.skSum[sk].co)}
+    </div>`;
+  });
+
+  // Attention tab
+  const ai=d.skills.length+2;
+  const atrows=d.att.map((s,i)=>`<tr>
+    <td>${i+1}</td><td>${s.fn}${s.ln?' '+s.ln:''}</td>
+    <td>${s.reg}</td><td>${s.email}</td><td>${s.mob}</td>
+    <td>${s.branch}</td><td>${s.year}</td>
+    <td style="color:${s.cs===0?'var(--danger)':'var(--warning)'}">${s.cs}</td>
+    <td style="color:${s.op<10?'var(--danger)':'var(--text)'}">${s.op.toFixed(2)}%</td>
+    <td>${s.cs===0?'<span class="b-ncs">No Course Started</span>':'<span class="b-ncc">Score &lt;10%</span>'}</td>
+  </tr>`).join('');
+  html+=`<div class="tc" id="tc${ai}">
+    <div class="warn-box">⚠️ ${d.att.length} student(s) need attention — have not started any course OR overall score is below 10%</div>
+    <div class="tw"><table>
+      <thead><tr><th>#</th><th>Name</th><th>Reg No</th><th>Email</th><th>Mobile</th>
+        <th>Branch</th><th>Year</th><th>Courses Started</th><th>Overall %</th><th>Reason</th></tr></thead>
+      <tbody>${atrows||'<tr><td colspan="10" class="empty">🎉 No students need attention</td></tr>'}</tbody>
+    </table></div>
+  </div>`;
+
+  document.getElementById('r-contents').innerHTML=html;
+}
+
+function mkSumTbl(s){
+  const rows=s.rows.map(r=>`<tr>
+    <td>${r.b}</td>
+    <td style="color:var(--success)">${r.c1||'—'}</td>
+    <td style="color:var(--danger)">${r.c2||'—'}</td>
+    <td><strong>${r.t}</strong></td>
+  </tr>`).join('');
+  return`<div class="tw" style="max-width:480px"><table>
+    <thead><tr>
+      <th>Branch Name</th><th>${s.l1}</th><th>${s.l2}</th><th>Grand Total</th>
+    </tr></thead>
+    <tbody>${rows}<tr class="trow">
+      <td>Grand Total</td>
+      <td style="color:var(--success)">${s.g.c1}</td>
+      <td style="color:var(--danger)">${s.g.c2}</td>
+      <td>${s.g.t}</td>
+    </tr></tbody>
+  </table></div>`;
+}
+
+// ─── ASSESSMENT RESULTS ────────────────────────
+function renderAssRes(d){
+  document.getElementById('r-cards').innerHTML=`<div class="mgrid">
+    <div class="mc"><div class="lbl">Total Students</div><div class="val" style="color:var(--accent)">${d.tot}</div><div class="sub">${d.brs.length} branches</div></div>
+    <div class="mc"><div class="lbl">Avg Score</div><div class="val" style="color:var(--success)">${d.avgSc.toFixed(1)}</div><div class="sub">out of ${d.totMax}</div></div>
+    <div class="mc"><div class="lbl">Avg Percentage</div><div class="val" style="color:var(--accent2)">${d.avgP.toFixed(1)}%</div><div class="sub">${getStatus(d.avgP)}</div></div>
+    <div class="mc"><div class="lbl">Top Score</div><div class="val" style="color:var(--warning)">${d.top?.total||0}</div><div class="sub">${(d.top?.name||'').split(' ').slice(0,2).join(' ')}</div></div>
+    ${Object.entries(d.stc).map(([st,c])=>`<div class="mc">
+      <div class="lbl">${st}</div>
+      <div class="val" style="color:${stColor(st)}">${c}</div>
+      <div class="sub">${(c/d.tot*100).toFixed(1)}%</div>
+    </div>`).join('')}
+  </div>`;
+
+  document.getElementById('r-tabs').innerHTML=`
+    <div class="tab active" onclick="swTab(0)">📋 Student Report</div>
+    <div class="tab" onclick="swTab(1)">📊 Branch Summary</div>`;
+
+  const skH=d.skCols.map(c=>`<th>${c.hdr}</th>`).join('');
+  const srows=d.students.map(s=>{
+    const skc=d.skCols.map(c=>`<td>${s.sc[c.name]}</td>`).join('');
+    const pc=stColor(s.status);
+    return`<tr>
+      <td>${s.i}</td><td>${s.name}</td><td>${s.email}</td>
+      <td>${s.reg}</td><td>${s.batch}</td><td>${s.branch}</td>
+      ${skc}
+      <td><strong>${s.total}</strong>/${s.totMax}</td>
+      <td><div class="pbar">
+        <div class="ptrack"><div class="pfill" style="width:${s.pct}%;background:${pc}"></div></div>
+        <span style="color:${pc};min-width:44px">${s.pct.toFixed(1)}%</span>
+      </div></td>
+      <td><span class="bs ${stClass(s.status)}">${s.status}</span></td>
+    </tr>`;
+  }).join('');
+
+  const brows=d.bsum.map(b=>`<tr>
+    <td>${b.b}</td><td>${b.tot}</td>
+    <td>${b.avg}/${d.totMax}</td><td>${b.avgP}%</td>
+    <td style="color:var(--poor)">${b.POOR}</td>
+    <td style="color:var(--avg)">${b.AVERAGE}</td>
+    <td style="color:var(--good)">${b.GOOD}</td>
+    <td style="color:var(--best)">${b.BEST}</td>
+  </tr>`).join('');
+
+  document.getElementById('r-contents').innerHTML=`
+    <div class="tc active" id="tc0">
+      <div class="tw"><table>
+        <thead><tr><th>#</th><th>Student Name</th><th>Email</th><th>Reg No</th>
+          <th>Batch</th><th>Branch</th>${skH}
+          <th>Total Score</th><th>Percentage</th><th>Status</th></tr></thead>
+        <tbody>${srows}</tbody>
+      </table></div>
+    </div>
+    <div class="tc" id="tc1">
+      <div class="tw" style="max-width:680px"><table>
+        <thead><tr><th>Branch</th><th>Students</th><th>Avg Score</th><th>Avg %</th>
+          <th style="color:var(--poor)">POOR</th>
+          <th style="color:var(--avg)">AVERAGE</th>
+          <th style="color:var(--good)">GOOD</th>
+          <th style="color:var(--best)">BEST</th></tr></thead>
+        <tbody>${brows}</tbody>
+      </table></div>
+    </div>`;
+}
+
+function swTab(i){
+  document.querySelectorAll('.tab').forEach((t,j)=>t.classList.toggle('active',j===i));
+  document.querySelectorAll('.tc').forEach((c,j)=>c.classList.toggle('active',j===i));
+}
+
+// ═══════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════
+function renderDash(){
+  const d=S.data;
+  const dt=new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+  document.getElementById('d-title').textContent='📊 TPO Dashboard — '+S.college;
+  document.getElementById('d-meta').textContent=S.report+' · '+dt;
+  Object.values(charts).forEach(c=>{try{c.destroy();}catch(e){}});
+  for(const k in charts) delete charts[k];
+  if(d.type==='prime') renderPrimeDash(d);
+  else renderAssDash(d);
+}
+
+// ─── PRIME DASHBOARD ───────────────────────────
+function renderPrimeDash(d){
+  const stP=(d.totSt/d.tot*100).toFixed(1);
+  const coP=(d.totCo/d.tot*100).toFixed(1);
+  document.getElementById('d-metrics').innerHTML=`
+    <div class="mc"><div class="lbl">Total Students</div><div class="val" style="color:var(--accent)">${d.tot}</div></div>
+    <div class="mc"><div class="lbl">Total Branches</div><div class="val" style="color:var(--accent2)">${d.brs.length}</div></div>
+    <div class="mc"><div class="lbl">Skills Tracked</div><div class="val" style="color:var(--warning)">${d.skills.length}</div></div>
+    <div class="mc"><div class="lbl">Started Rate</div><div class="val" style="color:var(--success)">${stP}%</div><div class="sub">${d.totSt} students</div></div>
+    <div class="mc"><div class="lbl">Completion Rate</div><div class="val" style="color:var(--accent2)">${coP}%</div><div class="sub">${d.totCo} students</div></div>
+    <div class="mc"><div class="lbl">Needs Attention</div><div class="val" style="color:var(--danger)">${d.att.length}</div><div class="sub">${(d.att.length/d.tot*100).toFixed(1)}%</div></div>`;
+
+  const yrs=[...new Set(d.students.map(s=>s.year).filter(Boolean))].sort();
+  document.getElementById('d-filt').innerHTML=`
+    <span class="flbl">Filter:</span>
+    <select id="fb" onchange="rePrimeLB()"><option value="">All Branches</option>
+      ${d.brs.map(b=>`<option value="${b}">${b}</option>`).join('')}</select>
+    <select id="fy" onchange="rePrimeLB()"><option value="">All Years</option>
+      ${yrs.map(y=>`<option value="${y}">${y}</option>`).join('')}</select>`;
+
+  const blbls=d.oSt.rows.map(r=>r.b.replace('B.Tech ',''));
+  document.getElementById('d-charts').innerHTML=`
+    <div class="cc"><h3>Course Started — Branch-wise</h3><canvas id="ch1"></canvas></div>
+    <div class="cc"><h3>Course Completion — Branch-wise</h3><canvas id="ch2"></canvas></div>
+    ${d.skills.length>0?`<div class="cc fw"><h3>Skill-wise: % of Students Started (by Branch)</h3><canvas id="ch3"></canvas></div>`:''}`;
+
+  setTimeout(()=>{
+    const co={responsive:true,plugins:{legend:{labels:{color:'#8b949e',boxWidth:11}}},
+      scales:{x:{ticks:{color:'#8b949e',maxRotation:40},grid:{color:'#30363d'}},
+              y:{ticks:{color:'#8b949e'},grid:{color:'#30363d'}}}};
+    charts.c1=new Chart(document.getElementById('ch1'),{type:'bar',data:{
+      labels:blbls,
+      datasets:[
+        {label:'Started',data:d.oSt.rows.map(r=>r.c1),backgroundColor:'rgba(63,185,80,.7)'},
+        {label:'Not Started',data:d.oSt.rows.map(r=>r.c2),backgroundColor:'rgba(248,81,73,.7)'}
+      ]},options:co});
+    charts.c2=new Chart(document.getElementById('ch2'),{type:'bar',data:{
+      labels:blbls,
+      datasets:[
+        {label:'Completed',data:d.oCo.rows.map(r=>r.c1),backgroundColor:'rgba(88,166,255,.7)'},
+        {label:'Not Completed',data:d.oCo.rows.map(r=>r.c2),backgroundColor:'rgba(210,153,34,.7)'}
+      ]},options:co});
+    if(d.skills.length>0&&document.getElementById('ch3')){
+      const pal=['#58a6ff','#3fb950','#f85149','#d29922','#bc8cff','#79c0ff','#56d364','#ffa657'];
+      charts.c3=new Chart(document.getElementById('ch3'),{type:'bar',data:{
+        labels:d.skills.map(s=>s.length>20?s.slice(0,19)+'…':s),
+        datasets:d.brs.slice(0,8).map((b,i)=>({
+          label:b.replace('B.Tech ',''),
+          data:d.skills.map(sk=>{
+            const bs=d.students.filter(s=>s.branch===b);
+            return bs.length?(bs.filter(s=>s.scores[sk]>=10).length/bs.length*100).toFixed(1):0;
+          }),
+          backgroundColor:pal[i%pal.length]+'99',
+          borderColor:pal[i%pal.length],borderWidth:1
+        }))
+      },options:{...co,plugins:{...co.plugins,legend:{display:true,labels:{color:'#8b949e',boxWidth:11}}}}});
+    }
+  },100);
+  rePrimeLB();
+}
+function rePrimeLB(){
+  const d=S.data; if(!d||d.type!=='prime') return;
+  const fb=document.getElementById('fb')?.value||'';
+  const fy=document.getElementById('fy')?.value||'';
+  let st=d.students;
+  if(fb) st=st.filter(s=>s.branch===fb);
+  if(fy) st=st.filter(s=>s.year===fy);
+  const sorted=[...st].sort((a,b)=>b.cc-a.cc||b.op-a.op);
+  document.getElementById('d-board').innerHTML=`
+    <div class="stitle">🏆 Leaderboard — Top by Course Completion</div>
+    <div class="tw"><table>
+      <thead><tr><th>Rank</th><th>Name</th><th>Reg No</th><th>Branch</th><th>Year</th>
+        <th>Cs. Started</th><th>Cs. Completed</th><th>Overall %</th></tr></thead>
+      <tbody>${sorted.slice(0,50).map((s,i)=>`<tr>
+        <td><strong>${i+1}</strong>${i===0?' 🥇':i===1?' 🥈':i===2?' 🥉':''}</td>
+        <td>${s.fn}${s.ln?' '+s.ln:''}</td><td>${s.reg}</td>
+        <td>${s.branch}</td><td>${s.year}</td>
+        <td>${s.cs}</td>
+        <td style="color:var(--success)"><strong>${s.cc}</strong></td>
+        <td><div class="pbar">
+          <div class="ptrack"><div class="pfill" style="width:${Math.min(s.op,100)}%;background:var(--accent)"></div></div>
+          <span style="min-width:44px">${s.op.toFixed(1)}%</span>
+        </div></td>
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+  const att=d.att.filter(s=>(!fb||s.branch===fb)&&(!fy||s.year===fy));
+  document.getElementById('d-att').innerHTML=att.length?`
+    <div class="stitle">⚠️ Students Needing Attention (${att.length})</div>
+    <div class="tw"><table>
+      <thead><tr><th>#</th><th>Name</th><th>Reg No</th><th>Email</th><th>Branch</th>
+        <th>Year</th><th>Courses Started</th><th>Overall %</th></tr></thead>
+      <tbody>${att.slice(0,40).map((s,i)=>`<tr class="att-row">
+        <td>${i+1}</td><td>${s.fn}${s.ln?' '+s.ln:''}</td>
+        <td>${s.reg}</td><td>${s.email}</td>
+        <td>${s.branch}</td><td>${s.year}</td>
+        <td style="color:${s.cs===0?'var(--danger)':'var(--warning)'}">${s.cs}</td>
+        <td style="color:${s.op<10?'var(--danger)':'var(--text)'}">${s.op.toFixed(1)}%</td>
+      </tr>`).join('')}</tbody>
+    </table></div>`:'';
+}
+
+// ─── ASSESSMENT DASHBOARD ──────────────────────
+function renderAssDash(d){
+  document.getElementById('d-metrics').innerHTML=`
+    <div class="mc"><div class="lbl">Total Students</div><div class="val" style="color:var(--accent)">${d.tot}</div></div>
+    <div class="mc"><div class="lbl">Branches</div><div class="val" style="color:var(--accent2)">${d.brs.length}</div></div>
+    <div class="mc"><div class="lbl">Avg Score</div><div class="val" style="color:var(--success)">${d.avgSc.toFixed(1)}</div><div class="sub">out of ${d.totMax}</div></div>
+    <div class="mc"><div class="lbl">Avg %</div><div class="val" style="color:var(--accent2)">${d.avgP.toFixed(1)}%</div></div>
+    ${Object.entries(d.stc).map(([st,c])=>`<div class="mc">
+      <div class="lbl">${st}</div><div class="val" style="color:${stColor(st)}">${c}</div>
+      <div class="sub">${(c/d.tot*100).toFixed(1)}%</div>
+    </div>`).join('')}`;
+
+  const bats=[...new Set(d.students.map(s=>s.batch).filter(Boolean))].sort();
+  document.getElementById('d-filt').innerHTML=`
+    <span class="flbl">Filter:</span>
+    <select id="fb" onchange="reAssLB()"><option value="">All Branches</option>
+      ${d.brs.map(b=>`<option value="${b}">${b}</option>`).join('')}</select>
+    <select id="fbat" onchange="reAssLB()"><option value="">All Batches</option>
+      ${bats.map(b=>`<option value="${b}">${b}</option>`).join('')}</select>`;
+
+  document.getElementById('d-charts').innerHTML=`
+    <div class="cc"><h3>Status Distribution</h3><canvas id="ch1"></canvas></div>
+    <div class="cc"><h3>Branch-wise Average Score</h3><canvas id="ch2"></canvas></div>
+    ${d.skCols.length>1?`<div class="cc fw"><h3>Branch-wise Avg Score per Skill</h3><canvas id="ch3"></canvas></div>`:''}`;
+
+  setTimeout(()=>{
+    const stcol={BEST:'#3fb950',GOOD:'#58a6ff',AVERAGE:'#d29922',POOR:'#f85149'};
+    charts.c1=new Chart(document.getElementById('ch1'),{type:'doughnut',data:{
+      labels:Object.keys(d.stc),
+      datasets:[{data:Object.values(d.stc),backgroundColor:Object.keys(d.stc).map(s=>stcol[s]),borderWidth:0}]
+    },options:{responsive:true,plugins:{legend:{labels:{color:'#8b949e'},position:'bottom'}}}});
+
+    charts.c2=new Chart(document.getElementById('ch2'),{type:'bar',data:{
+      labels:d.bsum.map(b=>b.b),
+      datasets:[{label:'Avg Score',data:d.bsum.map(b=>parseFloat(b.avg)),backgroundColor:'rgba(88,166,255,.7)'}]
+    },options:{responsive:true,plugins:{legend:{labels:{color:'#8b949e',boxWidth:11}}},
+      scales:{x:{ticks:{color:'#8b949e',maxRotation:40},grid:{color:'#30363d'}},
+              y:{ticks:{color:'#8b949e'},grid:{color:'#30363d'}}}}});
+
+    if(d.skCols.length>1&&document.getElementById('ch3')){
+      const pal=['#58a6ff','#3fb950','#f85149','#d29922','#bc8cff','#ffa657'];
+      charts.c3=new Chart(document.getElementById('ch3'),{type:'bar',data:{
+        labels:d.brs,
+        datasets:d.skCols.map((sc,i)=>({
+          label:sc.name,
+          data:d.brs.map(b=>{
+            const bs=d.students.filter(s=>s.branch===b);
+            return bs.length?(bs.reduce((a,s)=>a+s.sc[sc.name],0)/bs.length).toFixed(1):0;
+          }),
+          backgroundColor:pal[i%pal.length]+'99',
+          borderColor:pal[i%pal.length],borderWidth:1
+        }))
+      },options:{responsive:true,plugins:{legend:{display:true,labels:{color:'#8b949e',boxWidth:11}}},
+        scales:{x:{ticks:{color:'#8b949e',maxRotation:40},grid:{color:'#30363d'}},
+                y:{ticks:{color:'#8b949e'},grid:{color:'#30363d'}}}}});
+    }
+  },100);
+  reAssLB();
+}
+function reAssLB(){
+  const d=S.data; if(!d||d.type!=='assessment') return;
+  const fb=document.getElementById('fb')?.value||'';
+  const fbat=document.getElementById('fbat')?.value||'';
+  let st=d.sorted;
+  if(fb) st=st.filter(s=>s.branch===fb);
+  if(fbat) st=st.filter(s=>s.batch===fbat);
+  document.getElementById('d-board').innerHTML=`
+    <div class="stitle">🏆 Leaderboard — Ranked by Score</div>
+    <div class="tw"><table>
+      <thead><tr><th>Rank</th><th>Student Name</th><th>Reg No</th><th>Branch</th>
+        <th>Batch</th><th>Score</th><th>Percentage</th><th>Status</th></tr></thead>
+      <tbody>${st.slice(0,50).map((s,i)=>`<tr>
+        <td><strong>${i+1}</strong>${i===0?' 🥇':i===1?' 🥈':i===2?' 🥉':''}</td>
+        <td>${s.name}</td><td>${s.reg}</td><td>${s.branch}</td><td>${s.batch}</td>
+        <td><strong>${s.total}</strong>/${s.totMax}</td>
+        <td><div class="pbar">
+          <div class="ptrack"><div class="pfill" style="width:${s.pct}%;background:${stColor(s.status)}"></div></div>
+          <span style="color:${stColor(s.status)};min-width:44px">${s.pct.toFixed(1)}%</span>
+        </div></td>
+        <td><span class="bs ${stClass(s.status)}">${s.status}</span></td>
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+  document.getElementById('d-att').innerHTML='';
+}
+
+// ═══════════════════════════════════════════════
+// EXCEL DOWNLOAD
+// ═══════════════════════════════════════════════
+function doDownload(){
+  const d=S.data;
+  if(!d){ showToast('No data to download','err'); return; }
+  try{
+    const wb=XLSX.utils.book_new();
+    const dt=new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+    const ttl=`${S.college} || ${S.report} | ${dt}`;
+    if(d.type==='prime') buildPrimeWB(d,wb,ttl);
+    else buildAssWB(d,wb,ttl);
+    const fn=`${S.college.replace(/[^a-z0-9]/gi,'_')}_${S.report.replace(/[^a-z0-9]/gi,'_')}_${d.type}.xlsx`;
+    XLSX.writeFile(wb,fn);
+    showToast('✅ Excel downloaded!','ok');
+  }catch(e){ showToast('Download error: '+e.message,'err'); console.error(e); }
+}
+
+function buildPrimeWB(d,wb,ttl){
+  // Sheet 1 — Student Report
+  const h1=[ttl,...Array(10+d.skills.length*3).fill('')];
+  const h2=[];
+  const h3=['S No','First Name','Last Name','Reg No','Email','Mobile','Branch','Year',
+    'Courses Started','Courses Completed',
+    ...d.skills,
+    'Overall CS',...d.skills.map(s=>s+' CS'),
+    'Overall CC',...d.skills.map(s=>s+' CC')];
+  const rows=[h1,h2,h3];
+  d.students.forEach(s=>{
+    rows.push([s.i,s.fn,s.ln,s.reg,s.email,s.mob,s.branch,s.year,s.cs,s.cc,
+      ...d.skills.map(sk=>s.scores[sk]),
+      s.oCS,...d.skills.map(sk=>s.skCS[sk]),
+      s.oCC,...d.skills.map(sk=>s.skCC[sk])]);
+  });
+  const ws1=XLSX.utils.aoa_to_sheet(rows);
+  setColWidths(ws1,[5,18,14,16,28,14,14,8,10,10,...d.skills.map(()=>14),...Array(1+d.skills.length*2+1+d.skills.length).fill(22)]);
+  XLSX.utils.book_append_sheet(wb,ws1,'Student Report');
+
+  // Sheet 2 — Overall Summary
+  const s2=[[ttl],[],[],
+    ['OVERALL COURSE STARTED SUMMARY'],[],
+    ['Branch Name','COURSE STARTED','COURSE YET TO START','Grand Total']];
+  d.oSt.rows.forEach(r=>s2.push([r.b,r.c1,r.c2,r.t]));
+  s2.push(['Grand Total',d.oSt.g.c1,d.oSt.g.c2,d.oSt.g.t]);
+  s2.push([],[],['OVERALL COURSE COMPLETION SUMMARY'],[],
+    ['Branch Name','COURSE COMPLETED','COURSE YET TO BE COMPLETED','Grand Total']);
+  d.oCo.rows.forEach(r=>s2.push([r.b,r.c1,r.c2,r.t]));
+  s2.push(['Grand Total',d.oCo.g.c1,d.oCo.g.c2,d.oCo.g.t]);
+  const ws2=XLSX.utils.aoa_to_sheet(s2);
+  setColWidths(ws2,[25,16,28,12]);
+  XLSX.utils.book_append_sheet(wb,ws2,'Overall Summary');
+
+  // Per-skill sheets
+  d.skills.forEach(sk=>{
+    const sn=sk.replace(/[:\\/?*[\]]/g,'').slice(0,28);
+    const ss=[[ttl],[],[],
+      [sk.toUpperCase()+' — STARTED SUMMARY'],[],
+      ['Branch Name','COURSE STARTED','COURSE YET TO START','Grand Total']];
+    d.skSum[sk].st.rows.forEach(r=>ss.push([r.b,r.c1,r.c2,r.t]));
+    const sg=d.skSum[sk].st.g;
+    ss.push(['Grand Total',sg.c1,sg.c2,sg.t]);
+    ss.push([],[],[sk.toUpperCase()+' — COMPLETION SUMMARY'],[],
+      ['Branch Name','COURSE COMPLETED','COURSE YET TO COMPLETE','Grand Total']);
+    d.skSum[sk].co.rows.forEach(r=>ss.push([r.b,r.c1,r.c2,r.t]));
+    const cg=d.skSum[sk].co.g;
+    ss.push(['Grand Total',cg.c1,cg.c2,cg.t]);
+    const wssk=XLSX.utils.aoa_to_sheet(ss);
+    setColWidths(wssk,[25,16,28,12]);
+    XLSX.utils.book_append_sheet(wb,wssk,sn);
+  });
+
+  // Needs Attention sheet
+  const sa=[[ttl],[],[],
+    ['S No','First Name','Last Name','Reg No','Email','Mobile','Branch','Year','Courses Started','Overall %','Reason']];
+  d.att.forEach((s,i)=>sa.push([i+1,s.fn,s.ln,s.reg,s.email,s.mob,s.branch,s.year,
+    s.cs,s.op.toFixed(2)+'%',s.cs===0?'No Course Started':'Low Score (<10%)']));
+  const wsa=XLSX.utils.aoa_to_sheet(sa);
+  setColWidths(wsa,[5,18,14,16,28,14,14,8,14,10,22]);
+  XLSX.utils.book_append_sheet(wb,wsa,'Needs Attention');
+}
+
+function buildAssWB(d,wb,ttl){
+  // Sheet 1 — Student Report
+  const h=['S No','Student Name','Email','Reg No','Batch','Branch',
+    ...d.skCols.map(c=>c.hdr),`Total Score (${d.totMax})`,'Percentage','Status'];
+  const rows=[[ttl],[],h];
+  d.students.forEach(s=>rows.push([s.i,s.name,s.email,s.reg,s.batch,s.branch,
+    ...d.skCols.map(c=>s.sc[c.name]),s.total,s.pct.toFixed(2)+'%',s.status]));
+  const ws1=XLSX.utils.aoa_to_sheet(rows);
+  setColWidths(ws1,[5,24,28,16,8,16,...d.skCols.map(()=>14),14,12,10]);
+  XLSX.utils.book_append_sheet(wb,ws1,'Student Report');
+
+  // Sheet 2 — Branch Summary
+  const s2=[[ttl],[],
+    ['Branch','Total Students',`Avg Score (/${d.totMax})`,`Avg %`,'POOR','AVERAGE','GOOD','BEST']];
+  d.bsum.forEach(b=>s2.push([b.b,b.tot,b.avg,b.avgP+'%',b.POOR,b.AVERAGE,b.GOOD,b.BEST]));
+  const ws2=XLSX.utils.aoa_to_sheet(s2);
+  setColWidths(ws2,[20,14,16,10,8,10,8,8]);
+  XLSX.utils.book_append_sheet(wb,ws2,'Branch Summary');
+}
+
+function setColWidths(ws,widths){
+  ws['!cols']=widths.map(w=>({wch:w}));
+}
+
+// ═══════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════
+function showErr(m){
+  const e=document.getElementById('up-err');
+  e.textContent='⚠️ '+m; e.style.display='block';
+}
+function hideErr(){ document.getElementById('up-err').style.display='none'; }
+function showToast(m,t='ok'){
+  const el=document.createElement('div');
+  el.className='toast '+t; el.textContent=m;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),3200);
+}
+</script>
+</body>
+</html>
