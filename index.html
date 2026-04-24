@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Career247 – B2I Analytics Bot</title>
+<title>Prepinsta – B2I Analytics Bot</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 :root{
   --bg:#0d1117;--surface:#161b22;--surface2:#21262d;--border:#30363d;
-  --accent:#58a6ff;--accent2:#bc8cff;--success:#3fb950;--warning:#d29922;
+  --accent:#22c55e;--accent2:#16a34a;--success:#3fb950;--warning:#d29922;
   --danger:#f85149;--text:#c9d1d9;--text2:#8b949e;
   --best:#3fb950;--good:#58a6ff;--avg:#d29922;--poor:#f85149;
 }
@@ -116,6 +116,9 @@ tbody td{padding:8px 11px;white-space:nowrap}
 /* METRIC CARDS */
 .mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:11px;margin-bottom:18px}
 .mc{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px}
+.mc.clickable{cursor:pointer;transition:transform .15s,border-color .2s}
+.mc.clickable:hover{transform:translateY(-1px);border-color:var(--accent)}
+.mc.active-kpi{border-color:var(--accent);box-shadow:0 0 0 1px rgba(34,197,94,.35) inset}
 .mc .lbl{font-size:12px;color:var(--text2);margin-bottom:5px}
 .mc .val{font-size:23px;font-weight:700}
 .mc .sub{font-size:12px;color:var(--text2);margin-top:2px}
@@ -171,6 +174,11 @@ tbody td{padding:8px 11px;white-space:nowrap}
   .cgrid{grid-template-columns:1fr}
   .rhdr{flex-direction:column}
 }
+@media print{
+  .hdr,.ract,.filt,.tabs,.moverlay{display:none!important}
+  body{background:#fff;color:#000}
+  .cc,.mc,.tw{break-inside:avoid}
+}
 </style>
 </head>
 <body>
@@ -179,7 +187,7 @@ tbody td{padding:8px 11px;white-space:nowrap}
 <div class="hdr">
   <div class="logo">
     <div class="logo-icon">🤖</div>
-    <span>Career247</span>
+    <span>Prepinsta</span>
     <span class="pill">B2I Analytics Bot</span>
   </div>
   <div id="hdr-right" style="font-size:13px;color:var(--text2)"></div>
@@ -266,6 +274,8 @@ tbody td{padding:8px 11px;white-space:nowrap}
       <div class="ract">
         <button class="btn btn-s" onclick="goHome()">← New Report</button>
         <button class="btn btn-g" onclick="doDownload()">⬇️ Download Excel</button>
+        <button class="btn btn-s" onclick="downloadHTML('report')">🌐 Download HTML</button>
+        <button class="btn btn-s" onclick="downloadPDF('report')">🧾 Download PDF</button>
         <button class="btn btn-p" onclick="goDash()">📊 TPO Dashboard</button>
       </div>
     </div>
@@ -287,6 +297,8 @@ tbody td{padding:8px 11px;white-space:nowrap}
       </div>
       <div class="ract">
         <button class="btn btn-s" onclick="goResults()">← Back to Report</button>
+        <button class="btn btn-s" onclick="downloadHTML('dashboard')">🌐 Download HTML</button>
+        <button class="btn btn-s" onclick="downloadPDF('dashboard')">🧾 Download PDF</button>
         <button class="btn btn-s" onclick="goHome()">🏠 Home</button>
       </div>
     </div>
@@ -295,6 +307,7 @@ tbody td{padding:8px 11px;white-space:nowrap}
     <div class="cgrid" id="d-charts"></div>
     <div id="d-board"></div>
     <div id="d-att"></div>
+    <div id="d-swot"></div>
   </div>
 </div>
 
@@ -394,9 +407,11 @@ const S = {
   college: '', report: '',
   selSkills: [],
   file: null,
-  data: null
+  data: null,
+  dashFilter: null
 };
 const charts = {};
+const sortState = {};
 
 // ═══════════════════════════════════════════════
 // NAVIGATION
@@ -407,7 +422,7 @@ function show(id){
 }
 function goHome(){ show('s-upload'); S.data=null; }
 function goResults(){ show('s-results'); }
-function goDash(){ show('s-dash'); renderDash(); }
+function goDash(){ show('s-dash'); S.dashFilter=null; renderDash(); }
 
 // ═══════════════════════════════════════════════
 // TYPE
@@ -717,9 +732,10 @@ function procAssess(rows){
 
   const stc={BEST:0,GOOD:0,AVERAGE:0,POOR:0};
   students.forEach(s=>stc[s.status]++);
+  const att=students.filter(s=>s.pct<10);
 
   return{
-    type:'assessment', students, sorted, brs, skCols, totMax, bsum, stc,
+    type:'assessment', students, sorted, brs, skCols, totMax, bsum, stc, att,
     tot:students.length,
     avgSc:(students.reduce((a,s)=>a+s.total,0)/students.length)||0,
     avgP:(students.reduce((a,s)=>a+s.pct,0)/students.length)||0,
@@ -852,6 +868,8 @@ function renderPrimeRes(d){
   </div>`;
 
   document.getElementById('r-contents').innerHTML=html;
+  document.getElementById('r-contents').insertAdjacentHTML('beforeend',buildSwotHTML(d,'internal'));
+  makeTablesSortable(document.getElementById('r-contents'));
 }
 
 function mkSumTbl(s){
@@ -890,7 +908,9 @@ function renderAssRes(d){
 
   document.getElementById('r-tabs').innerHTML=`
     <div class="tab active" onclick="swTab(0)">📋 Student Report</div>
-    <div class="tab" onclick="swTab(1)">📊 Branch Summary</div>`;
+    <div class="tab" onclick="swTab(1)">📊 Branch Summary</div>
+    <div class="tab" onclick="swTab(2)">⚠️ Attention Students</div>
+    <div class="tab" onclick="swTab(3)">🧠 Branch Skill Scores</div>`;
 
   const skH=d.skCols.map(c=>`<th>${c.hdr}</th>`).join('');
   const srows=d.students.map(s=>{
@@ -917,6 +937,19 @@ function renderAssRes(d){
     <td style="color:var(--good)">${b.GOOD}</td>
     <td style="color:var(--best)">${b.BEST}</td>
   </tr>`).join('');
+  const attRows=d.att.map((s,i)=>`<tr class="att-row">
+    <td>${i+1}</td><td>${s.name}</td><td>${s.reg}</td><td>${s.email}</td>
+    <td>${s.batch}</td><td>${s.branch}</td>
+    <td style="color:var(--danger)">${s.total}/${s.totMax}</td>
+    <td style="color:var(--danger)">${s.pct.toFixed(1)}%</td>
+    <td><span class="b-ncs">Low score (&lt;10%)</span></td>
+  </tr>`).join('');
+  const skHeaders=d.skCols.map(c=>`<th>${c.name}</th>`).join('');
+  const bSkillRows=d.brs.map(b=>{
+    const bs=d.students.filter(s=>s.branch===b);
+    const av=d.skCols.map(c=>bs.length?(bs.reduce((a,s)=>a+s.sc[c.name],0)/bs.length).toFixed(1):'0.0');
+    return `<tr><td>${b}</td><td>${bs.length}</td>${av.map(v=>`<td>${v}</td>`).join('')}</tr>`;
+  }).join('');
 
   document.getElementById('r-contents').innerHTML=`
     <div class="tc active" id="tc0">
@@ -936,7 +969,23 @@ function renderAssRes(d){
           <th style="color:var(--best)">BEST</th></tr></thead>
         <tbody>${brows}</tbody>
       </table></div>
+    </div>
+    <div class="tc" id="tc2">
+      <div class="warn-box">⚠️ ${d.att.length} student(s) scored less than 10% in overall assessment.</div>
+      <div class="tw"><table>
+        <thead><tr><th>#</th><th>Student Name</th><th>Reg No</th><th>Email</th><th>Batch</th><th>Branch</th><th>Score</th><th>Overall %</th><th>Reason</th></tr></thead>
+        <tbody>${attRows||'<tr><td colspan="9" class="empty">🎉 No students below 10%</td></tr>'}</tbody>
+      </table></div>
+    </div>
+    <div class="tc" id="tc3">
+      <div class="stitle">🧠 Branch-wise Average Skill Scores</div>
+      <div class="tw"><table>
+        <thead><tr><th>Branch</th><th>Students</th>${skHeaders}</tr></thead>
+        <tbody>${bSkillRows}</tbody>
+      </table></div>
     </div>`;
+  document.getElementById('r-contents').insertAdjacentHTML('beforeend',buildSwotHTML(d,'internal'));
+  makeTablesSortable(document.getElementById('r-contents'));
 }
 
 function swTab(i){
@@ -963,12 +1012,12 @@ function renderPrimeDash(d){
   const stP=(d.totSt/d.tot*100).toFixed(1);
   const coP=(d.totCo/d.tot*100).toFixed(1);
   document.getElementById('d-metrics').innerHTML=`
-    <div class="mc"><div class="lbl">Total Students</div><div class="val" style="color:var(--accent)">${d.tot}</div></div>
+    <div class="mc clickable ${S.dashFilter==='ALL'?'active-kpi':''}" data-kpi="ALL" onclick="setDashFilter('ALL')"><div class="lbl">Total Students</div><div class="val" style="color:var(--accent)">${d.tot}</div></div>
     <div class="mc"><div class="lbl">Total Branches</div><div class="val" style="color:var(--accent2)">${d.brs.length}</div></div>
     <div class="mc"><div class="lbl">Skills Tracked</div><div class="val" style="color:var(--warning)">${d.skills.length}</div></div>
-    <div class="mc"><div class="lbl">Started Rate</div><div class="val" style="color:var(--success)">${stP}%</div><div class="sub">${d.totSt} students</div></div>
-    <div class="mc"><div class="lbl">Completion Rate</div><div class="val" style="color:var(--accent2)">${coP}%</div><div class="sub">${d.totCo} students</div></div>
-    <div class="mc"><div class="lbl">Needs Attention</div><div class="val" style="color:var(--danger)">${d.att.length}</div><div class="sub">${(d.att.length/d.tot*100).toFixed(1)}%</div></div>`;
+    <div class="mc clickable ${S.dashFilter==='STARTED'?'active-kpi':''}" data-kpi="STARTED" onclick="setDashFilter('STARTED')"><div class="lbl">Started Rate</div><div class="val" style="color:var(--success)">${stP}%</div><div class="sub">${d.totSt} students</div></div>
+    <div class="mc clickable ${S.dashFilter==='COMPLETED'?'active-kpi':''}" data-kpi="COMPLETED" onclick="setDashFilter('COMPLETED')"><div class="lbl">Completion Rate</div><div class="val" style="color:var(--accent2)">${coP}%</div><div class="sub">${d.totCo} students</div></div>
+    <div class="mc clickable ${S.dashFilter==='ATTENTION'?'active-kpi':''}" data-kpi="ATTENTION" onclick="setDashFilter('ATTENTION')"><div class="lbl">Needs Attention</div><div class="val" style="color:var(--danger)">${d.att.length}</div><div class="sub">${(d.att.length/d.tot*100).toFixed(1)}%</div></div>`;
 
   const yrs=[...new Set(d.students.map(s=>s.year).filter(Boolean))].sort();
   document.getElementById('d-filt').innerHTML=`
@@ -1025,6 +1074,9 @@ function rePrimeLB(){
   let st=d.students;
   if(fb) st=st.filter(s=>s.branch===fb);
   if(fy) st=st.filter(s=>s.year===fy);
+  if(S.dashFilter==='STARTED') st=st.filter(s=>s.cs>=1);
+  if(S.dashFilter==='COMPLETED') st=st.filter(s=>s.cc>=1);
+  if(S.dashFilter==='ATTENTION') st=st.filter(s=>s.att);
   const sorted=[...st].sort((a,b)=>b.cc-a.cc||b.op-a.op);
   document.getElementById('d-board').innerHTML=`
     <div class="stitle">🏆 Leaderboard — Top by Course Completion</div>
@@ -1057,16 +1109,19 @@ function rePrimeLB(){
         <td style="color:${s.op<10?'var(--danger)':'var(--text)'}">${s.op.toFixed(1)}%</td>
       </tr>`).join('')}</tbody>
     </table></div>`:'';
+  document.getElementById('d-swot').innerHTML=buildSwotHTML(d,'tpo');
+  makeTablesSortable(document.getElementById('s-dash'));
 }
 
 // ─── ASSESSMENT DASHBOARD ──────────────────────
 function renderAssDash(d){
   document.getElementById('d-metrics').innerHTML=`
-    <div class="mc"><div class="lbl">Total Students</div><div class="val" style="color:var(--accent)">${d.tot}</div></div>
+    <div class="mc clickable ${S.dashFilter==='ALL'?'active-kpi':''}" onclick="setDashFilter('ALL')"><div class="lbl">Total Students</div><div class="val" style="color:var(--accent)">${d.tot}</div></div>
     <div class="mc"><div class="lbl">Branches</div><div class="val" style="color:var(--accent2)">${d.brs.length}</div></div>
     <div class="mc"><div class="lbl">Avg Score</div><div class="val" style="color:var(--success)">${d.avgSc.toFixed(1)}</div><div class="sub">out of ${d.totMax}</div></div>
     <div class="mc"><div class="lbl">Avg %</div><div class="val" style="color:var(--accent2)">${d.avgP.toFixed(1)}%</div></div>
-    ${Object.entries(d.stc).map(([st,c])=>`<div class="mc">
+    <div class="mc clickable ${S.dashFilter==='ATTENTION'?'active-kpi':''}" onclick="setDashFilter('ATTENTION')"><div class="lbl">Attention (&lt;10%)</div><div class="val" style="color:var(--danger)">${d.att.length}</div><div class="sub">${(d.att.length/d.tot*100).toFixed(1)}%</div></div>
+    ${Object.entries(d.stc).map(([st,c])=>`<div class="mc clickable ${S.dashFilter===st?'active-kpi':''}" onclick="setDashFilter('${st}')">
       <div class="lbl">${st}</div><div class="val" style="color:${stColor(st)}">${c}</div>
       <div class="sub">${(c/d.tot*100).toFixed(1)}%</div>
     </div>`).join('')}`;
@@ -1125,6 +1180,10 @@ function reAssLB(){
   let st=d.sorted;
   if(fb) st=st.filter(s=>s.branch===fb);
   if(fbat) st=st.filter(s=>s.batch===fbat);
+  if(S.dashFilter&&S.dashFilter!=='ALL'){
+    if(S.dashFilter==='ATTENTION') st=st.filter(s=>s.pct<10);
+    else st=st.filter(s=>s.status===S.dashFilter);
+  }
   document.getElementById('d-board').innerHTML=`
     <div class="stitle">🏆 Leaderboard — Ranked by Score</div>
     <div class="tw"><table>
@@ -1140,8 +1199,24 @@ function reAssLB(){
         </div></td>
         <td><span class="bs ${stClass(s.status)}">${s.status}</span></td>
       </tr>`).join('')}</tbody>
+    </table></div>
+    <div class="stitle">📊 Branch-wise Average Skill Scores</div>
+    <div class="tw"><table>
+      <thead><tr><th>Branch</th><th>Students</th>${d.skCols.map(c=>`<th>${c.name}</th>`).join('')}</tr></thead>
+      <tbody>${d.brs.map(b=>{
+        const bs=d.students.filter(s=>s.branch===b&&(!fbat||s.batch===fbat));
+        return `<tr><td>${b}</td><td>${bs.length}</td>${d.skCols.map(c=>`<td>${bs.length?(bs.reduce((a,s)=>a+s.sc[c.name],0)/bs.length).toFixed(1):'0.0'}</td>`).join('')}</tr>`;
+      }).join('')}</tbody>
     </table></div>`;
-  document.getElementById('d-att').innerHTML='';
+  const att=d.att.filter(s=>(!fb||s.branch===fb)&&(!fbat||s.batch===fbat));
+  document.getElementById('d-att').innerHTML=`
+    <div class="stitle">⚠️ Attention Students (&lt;10%) — ${att.length}</div>
+    <div class="tw"><table>
+      <thead><tr><th>#</th><th>Student Name</th><th>Reg No</th><th>Batch</th><th>Branch</th><th>Total</th><th>Overall %</th></tr></thead>
+      <tbody>${att.map((s,i)=>`<tr class="att-row"><td>${i+1}</td><td>${s.name}</td><td>${s.reg}</td><td>${s.batch}</td><td>${s.branch}</td><td>${s.total}/${s.totMax}</td><td style="color:var(--danger)">${s.pct.toFixed(1)}%</td></tr>`).join('')||'<tr><td colspan="7" class="empty">🎉 No students below 10%</td></tr>'}</tbody>
+    </table></div>`;
+  document.getElementById('d-swot').innerHTML=buildSwotHTML(d,'tpo');
+  makeTablesSortable(document.getElementById('s-dash'));
 }
 
 // ═══════════════════════════════════════════════
@@ -1247,6 +1322,100 @@ function buildAssWB(d,wb,ttl){
 
 function setColWidths(ws,widths){
   ws['!cols']=widths.map(w=>({wch:w}));
+}
+
+function setDashFilter(k){
+  S.dashFilter=(S.dashFilter===k)?null:k;
+  if(S.data?.type==='prime') rePrimeLB();
+  else reAssLB();
+}
+
+function buildSwotHTML(d,audience){
+  const isPrime=d.type==='prime';
+  const title=audience==='tpo'?'TPO Recommendations & SWOT':'Internal Team Recommendations & SWOT';
+  let strengths=[],weakness=[],opportunities=[],threats=[];
+  if(isPrime){
+    const topSkills=[...d.skills].sort((a,b)=>{
+      const ra=d.students.filter(s=>s.scores[a]>=10).length/d.tot;
+      const rb=d.students.filter(s=>s.scores[b]>=10).length/d.tot;
+      return rb-ra;
+    });
+    strengths=topSkills.slice(0,3).map(sk=>`${sk}: ${(d.students.filter(s=>s.scores[sk]>=10).length/d.tot*100).toFixed(1)}% students started.`);
+    weakness=topSkills.slice(-3).map(sk=>`${sk}: ${(d.students.filter(s=>s.scores[sk]>=10).length/d.tot*100).toFixed(1)}% started.`);
+    opportunities=[
+      `Batch-wise focus camps for branches with low completion (<50%).`,
+      `Mentor mapping for ${d.att.length} attention students.`
+    ];
+    threats=[`Low completion can impact placement readiness for upcoming drives.`];
+  }else{
+    const skPerf=d.skCols.map(c=>({
+      name:c.name,
+      avg:d.students.length?(d.students.reduce((a,s)=>a+s.sc[c.name],0)/d.students.length):0
+    })).sort((a,b)=>b.avg-a.avg);
+    strengths=skPerf.slice(0,3).map(s=>`${s.name}: avg ${s.avg.toFixed(1)} marks.`);
+    weakness=skPerf.slice(-3).map(s=>`${s.name}: avg ${s.avg.toFixed(1)} marks.`);
+    opportunities=[
+      `Run batch-wise bridge sessions for AVERAGE/POOR learners.`,
+      `Create targeted plans for ${d.att.length} students below 10%.`
+    ];
+    threats=[`Persistent low-score students can lower overall placement conversion.`];
+  }
+  return `<div class="card" style="margin-top:16px">
+    <div class="ctitle">🧭 ${title}</div>
+    <div class="frow">
+      <div><div class="stitle">💪 Strengths</div>${strengths.map(s=>`<div>• ${s}</div>`).join('')}</div>
+      <div><div class="stitle">⚠️ Weaknesses</div>${weakness.map(s=>`<div>• ${s}</div>`).join('')}</div>
+    </div>
+    <div class="frow">
+      <div><div class="stitle">🚀 Opportunities</div>${opportunities.map(s=>`<div>• ${s}</div>`).join('')}</div>
+      <div><div class="stitle">🛑 Threats</div>${threats.map(s=>`<div>• ${s}</div>`).join('')}</div>
+    </div>
+  </div>`;
+}
+
+function makeTablesSortable(root=document){
+  root.querySelectorAll('table').forEach((tbl,tIdx)=>{
+    const head=tbl.querySelectorAll('thead th');
+    const body=tbl.querySelector('tbody');
+    if(!head.length||!body) return;
+    head.forEach((th,i)=>{
+      th.style.cursor='pointer';
+      th.title='Click to sort';
+      th.onclick=()=>{
+        const key=`${tIdx}-${i}`;
+        sortState[key]=sortState[key]==='asc'?'desc':'asc';
+        const dir=sortState[key]==='asc'?1:-1;
+        const rows=[...body.querySelectorAll('tr')].filter(r=>!r.classList.contains('trow'));
+        rows.sort((a,b)=>{
+          const at=(a.children[i]?.innerText||'').trim();
+          const bt=(b.children[i]?.innerText||'').trim();
+          const an=parseFloat(at.replace(/[^\d.-]/g,''));
+          const bn=parseFloat(bt.replace(/[^\d.-]/g,''));
+          if(!isNaN(an)&&!isNaN(bn)) return (an-bn)*dir;
+          return at.localeCompare(bt,undefined,{numeric:true,sensitivity:'base'})*dir;
+        });
+        rows.forEach(r=>body.appendChild(r));
+      };
+    });
+  });
+}
+
+function downloadHTML(kind='report'){
+  const screen=kind==='dashboard'?'s-dash':'s-results';
+  const content=document.getElementById(screen)?.outerHTML||document.body.outerHTML;
+  const html=`<!doctype html><html><head><meta charset="utf-8"><title>${S.college} - ${S.report} - ${kind}</title></head><body>${content}</body></html>`;
+  const blob=new Blob([html],{type:'text/html'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`${(S.college||'college').replace(/\W+/g,'_')}_${kind}.html`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function downloadPDF(kind='report'){
+  const screen=kind==='dashboard'?'s-dash':'s-results';
+  show(screen);
+  setTimeout(()=>window.print(),120);
 }
 
 // ═══════════════════════════════════════════════
