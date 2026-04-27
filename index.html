@@ -922,15 +922,15 @@ function renderPrimeRes(d){
     <span class="flbl">🔍 Filter:</span>
     <input id="rsearch" placeholder="Search name / reg / email…" oninput="rePrimeResTab0()"
       style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 11px;color:var(--text);font-size:13px;outline:none;min-width:190px"/>
-    ${buildMultiSel('pri-br','Branch',d.brs,'rePrimeResTab0')}
-    ${buildMultiSel('pri-yr','Year',yrs,'rePrimeResTab0')}
+    ${buildMultiSel('pri-br','Branch',d.brs,'applyPrimeFilters')}
+    ${buildMultiSel('pri-yr','Year',yrs,'applyPrimeFilters')}
     ${buildMultiSel('pri-st','Status',[
       {val:'started',lbl:'Course Started'},
       {val:'not_started',lbl:'Not Started'},
       {val:'completed',lbl:'Completed ≥1'},
       {val:'attention',lbl:'Needs Attention'}
-    ],'rePrimeResTab0')}
-    <button class="btn btn-sm btn-s" onclick="msClearId('pri-br');msClearId('pri-yr');msClearId('pri-st');document.getElementById('rsearch').value='';rePrimeResTab0()">✕ Reset</button>
+    ],'applyPrimeFilters')}
+    <button class="btn btn-sm btn-s" onclick="msClearId('pri-br');msClearId('pri-yr');msClearId('pri-st');document.getElementById('rsearch').value='';applyPrimeFilters()">✕ Reset</button>
     <span id="r-count" style="font-size:12px;color:var(--text2);margin-left:auto"></span>`;
 
   const tabNames=['📋 Student Report','📊 Overall Summary',
@@ -1082,15 +1082,15 @@ function renderAssRes(d){
     <span class="flbl">🔍 Filter:</span>
     <input id="rsearch" placeholder="Search name / reg / email…" oninput="reAssResTab0()"
       style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 11px;color:var(--text);font-size:13px;outline:none;min-width:190px"/>
-    ${buildMultiSel('ass-br','Branch',d.brs,'reAssResTab0')}
-    ${buildMultiSel('ass-bat','Batch',bats,'reAssResTab0')}
+    ${buildMultiSel('ass-br','Branch',d.brs,'applyAssFilters')}
+    ${buildMultiSel('ass-bat','Batch',bats,'applyAssFilters')}
     ${buildMultiSel('ass-st','Status',[
       {val:'BEST',lbl:'BEST (>80%)'},
       {val:'GOOD',lbl:'GOOD (61-80%)'},
       {val:'AVERAGE',lbl:'AVERAGE (31-60%)'},
       {val:'POOR',lbl:'POOR (≤30%)'}
-    ],'reAssResTab0')}
-    <button class="btn btn-sm btn-s" onclick="msClearId('ass-br');msClearId('ass-bat');msClearId('ass-st');document.getElementById('rsearch').value='';reAssResTab0()">✕ Reset</button>
+    ],'applyAssFilters')}
+    <button class="btn btn-sm btn-s" onclick="msClearId('ass-br');msClearId('ass-bat');msClearId('ass-st');document.getElementById('rsearch').value='';applyAssFilters()">✕ Reset</button>
     <span id="r-count" style="font-size:12px;color:var(--text2);margin-left:auto"></span>`;
 
   S._assResD=d;
@@ -1230,11 +1230,13 @@ function renderPrimeDash(d){
   document.getElementById('d-swot').innerHTML=buildSwotHTML(d,'Prime Analytics');
 
   const yrs=[...new Set(d.students.map(s=>s.year).filter(Boolean))].sort();
-  msResetAll('prd-br','prd-yr');
+  // Dashboard reuses same shared filter IDs as internal view
   document.getElementById('d-filt').innerHTML=`
     <span class="flbl">Filter:</span>
-    ${buildMultiSel('prd-br','Branch',d.brs,'rePrimeLB')}
-    ${buildMultiSel('prd-yr','Year',yrs,'rePrimeLB')}`;
+    ${buildMultiSel('pri-br','Branch',d.brs,'applyPrimeFilters')}
+    ${buildMultiSel('pri-yr','Year',yrs,'applyPrimeFilters')}
+    ${buildMultiSel('pri-st','Status',[{val:'started',lbl:'Started'},{val:'not_started',lbl:'Not Started'},{val:'completed',lbl:'Completed'},{val:'attention',lbl:'Needs Attention'}],'applyPrimeFilters')}
+    <button class="btn btn-sm btn-s" onclick="msClearId('pri-br');msClearId('pri-yr');msClearId('pri-st');applyPrimeFilters()">✕ Reset</button>`;
 
   const blbls=d.oSt.rows.map(r=>r.b.replace('B.Tech ',''));
   document.getElementById('d-charts').innerHTML=`
@@ -1278,8 +1280,9 @@ function renderPrimeDash(d){
 }
 function rePrimeLB(){
   const d=S.data; if(!d||d.type!=='prime') return;
-  const fb=getMs('prd-br');
-  const fy=getMs('prd-yr');
+  const fb=getMs('pri-br');
+  const fy=getMs('pri-yr');
+  const fst=getMs('pri-st');
   let st=d.students;
   if(fb.length) st=st.filter(s=>fb.includes(s.branch));
   if(fy.length) st=st.filter(s=>fy.includes(s.year));
@@ -1342,11 +1345,13 @@ function renderAssDash(d){
   document.getElementById('d-swot').innerHTML=buildSwotHTML(d,'Assessment Analytics');
 
   const bats=[...new Set(d.students.map(s=>s.batch).filter(Boolean))].sort();
-  msResetAll('asd-br','asd-bat');
+  // Dashboard reuses same shared filter IDs as internal view
   document.getElementById('d-filt').innerHTML=`
     <span class="flbl">Filter:</span>
-    ${buildMultiSel('asd-br','Branch',d.brs,'reAssLB')}
-    ${buildMultiSel('asd-bat','Batch',bats,'reAssLB')}`;
+    ${buildMultiSel('ass-br','Branch',d.brs,'applyAssFilters')}
+    ${buildMultiSel('ass-bat','Batch',bats,'applyAssFilters')}
+    ${buildMultiSel('ass-st','Status',[{val:'BEST',lbl:'Best'},{val:'GOOD',lbl:'Good'},{val:'AVERAGE',lbl:'Average'},{val:'POOR',lbl:'Poor'}],'applyAssFilters')}
+    <button class="btn btn-sm btn-s" onclick="msClearId('ass-br');msClearId('ass-bat');msClearId('ass-st');applyAssFilters()">✕ Reset</button>`;
 
   document.getElementById('d-charts').innerHTML=`
     <div class="cc"><h3>Status Distribution</h3><canvas id="ch1"></canvas></div>
@@ -1390,13 +1395,15 @@ function renderAssDash(d){
 }
 function reAssLB(){
   const d=S.data; if(!d||d.type!=='assessment') return;
-  const fb=getMs('asd-br');
-  const fbat=getMs('asd-bat');
+  const fb=getMs('ass-br');
+  const fbat=getMs('ass-bat');
+  const fst=getMs('ass-st');
   let st=d.sorted;
   if(fb.length) st=st.filter(s=>fb.includes(s.branch));
   if(fbat.length) st=st.filter(s=>fbat.includes(s.batch));
-  // Apply KPI status filter
-  if(S.kpiFilter&&['BEST','GOOD','AVERAGE','POOR'].includes(S.kpiFilter))
+  // Apply status filter (multiselect takes priority over KPI click)
+  if(fst.length) st=st.filter(s=>fst.includes(s.status));
+  else if(S.kpiFilter&&['BEST','GOOD','AVERAGE','POOR'].includes(S.kpiFilter))
     st=st.filter(s=>s.status===S.kpiFilter);
   updateAssCharts(st,d.skCols);
   document.getElementById('d-board').innerHTML=`
@@ -1652,7 +1659,7 @@ function buildMultiSel(id,label,options,cbName){
   const sel=getMs(id);
   const txt=_msTxt(id,label,sel);
   return `<div class="ms-wrap" id="msw-${id}" data-label="${label}">
-    <button class="ms-btn${sel.length?' ms-on':''}" onclick="msOpen('${id}',event)">${txt} &#9660;</button>
+    <button class="ms-btn${sel.length?' ms-on':''}" onclick="msOpen('${id}',event,this)">${txt} &#9660;</button>
     <div class="ms-dd" id="msd-${id}" style="display:none">
       <div class="ms-ddhdr">
         <span>${label}</span>
@@ -1684,13 +1691,15 @@ function _msTxt(id,label,sel){
   return sel.length+' '+label+'s selected';
 }
 
-function msOpen(id,e){
+function msOpen(id,e,btnEl){
   e.stopPropagation();
   // Close all open dropdowns
   document.querySelectorAll('.ms-dd.ms-open').forEach(d=>{d.classList.remove('ms-open');d.style.display='none';});
-  const dd=document.getElementById('msd-'+id);
+  // Use the clicked button's own parent wrap to find the dropdown (handles duplicate IDs)
+  const btn=btnEl||e.currentTarget;
+  const wrap=btn?btn.closest('.ms-wrap'):null;
+  const dd=wrap?wrap.querySelector('.ms-dd'):document.querySelector(`[id="msd-${id}"]`);
   if(!dd) return;
-  const btn=document.querySelector(`#msw-${id} .ms-btn`);
   const rect=btn.getBoundingClientRect();
   dd.style.top=(rect.bottom+3+window.scrollY)+'px';
   dd.style.left=Math.min(rect.left,window.innerWidth-275)+'px';
@@ -1724,35 +1733,39 @@ function msTog(id,val){
 function msAll(id,checked){
   if(!msState[id]) msState[id]=new Set();
   if(checked){ msState[id].clear(); }
-  // Uncheck all individual options
-  const dd=document.getElementById('msd-'+id);
-  if(dd) dd.querySelectorAll('input[value]').forEach(cb=>cb.checked=false);
-  const allCb=document.getElementById('msall-'+id);
-  if(allCb) allCb.checked=true;
+  // Update ALL dropdowns sharing this ID
+  document.querySelectorAll(`[id="msd-${id}"]`).forEach(dd=>{
+    dd.querySelectorAll('input[value]').forEach(cb=>cb.checked=false);
+    const allCb=dd.querySelector(`[id="msall-${id}"]`);
+    if(allCb) allCb.checked=true;
+  });
   _msRefBtn(id); msRun(id);
 }
 
 function msClearId(id){
   if(msState[id]) msState[id].clear();
-  const dd=document.getElementById('msd-'+id);
-  if(dd){
+  document.querySelectorAll(`[id="msd-${id}"]`).forEach(dd=>{
     dd.querySelectorAll('input[value]').forEach(cb=>cb.checked=false);
-    const allCb=dd.querySelector('#msall-'+id);
+    const allCb=dd.querySelector(`[id="msall-${id}"]`);
     if(allCb) allCb.checked=true;
-  }
+  });
   _msRefBtn(id); msRun(id);
 }
 
 function _msRefBtn(id){
-  const wrap=document.getElementById('msw-'+id);
-  if(!wrap) return;
-  const label=wrap.dataset.label||id;
   const sel=getMs(id);
-  const btn=wrap.querySelector('.ms-btn');
-  if(btn){
-    btn.innerHTML=_msTxt(id,label,sel)+' &#9660;';
-    btn.classList.toggle('ms-on',sel.length>0);
-  }
+  // Update ALL instances sharing this ID (supports synced filters across screens)
+  document.querySelectorAll(`[id="msw-${id}"]`).forEach(wrap=>{
+    const label=wrap.dataset.label||id;
+    const btn=wrap.querySelector('.ms-btn');
+    if(btn){ btn.innerHTML=_msTxt(id,label,sel)+' &#9660;'; btn.classList.toggle('ms-on',sel.length>0); }
+    // Sync individual checkboxes in each dropdown
+    const dd=wrap.querySelector('.ms-dd');
+    if(dd){
+      dd.querySelectorAll('input[value]').forEach(cb=>{ cb.checked=sel.includes(cb.value); });
+      const allCb=dd.querySelector(`[id="msall-${id}"]`); if(allCb) allCb.checked=!sel.length;
+    }
+  });
 }
 
 function msRun(id){
@@ -1763,6 +1776,10 @@ function msRun(id){
 function msResetAll(...ids){
   ids.forEach(id=>{ if(msState[id]) msState[id].clear(); delete msCBs[id]; });
 }
+
+// ── Unified filter callbacks (shared across internal + dashboard) ──
+function applyPrimeFilters(){ rePrimeResTab0(); rePrimeLB(); }
+function applyAssFilters(){ reAssResTab0(); reAssLB(); }
 
 // ═══════════════════════════════════════════════
 // SORTABLE + FILTERABLE TABLE HEADERS
