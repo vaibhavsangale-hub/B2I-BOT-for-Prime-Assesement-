@@ -270,11 +270,18 @@ thead th:hover .col-filter-btn{opacity:1}
 /* PRINT */
 @media print{
   .hdr,.ract,.filt,.tabs,.moverlay,.btn,.ttoggle,.skill-btn,#prime-opts,#ass-opts,.toast,.col-filter-btn,.col-filter-popup,.chat-fab,.chat-panel{display:none!important}
-  body{background:#fff;color:#111}
-  .screen{display:block!important}
+  body{background:#fff!important;color:#111!important}
+  .screen{display:none!important}
+  .screen.pdf-target{display:block!important}
   .rpage,.dpage{padding:10px}
   table{font-size:11px}
   .mc{border:1px solid #ccc}
+  canvas{max-width:100%!important}
+  .cgrid{display:block!important}
+  .chart-box{page-break-inside:avoid;margin-bottom:16px}
+  h2,h3,.stitle{color:#111!important}
+  .val,.lbl{color:#111!important}
+  .tw{overflow:visible!important;max-height:none!important}
 }
 </style>
 </head>
@@ -557,6 +564,24 @@ function goHome(){
 }
 function goResults(){ show('s-results'); }
 function goDash(){ show('s-dash'); renderDash(); }
+
+function downloadPDF(mode){
+  // Map mode to screen ID
+  const screenId = mode==='dashboard' ? 's-dash' : 's-results';
+  const target = document.getElementById(screenId);
+  if(!target){ alert('Nothing to export yet. Please load data first.'); return; }
+
+  // Mark the target screen for print CSS
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('pdf-target'));
+  target.classList.add('pdf-target');
+
+  // Short delay so charts finish any pending render
+  setTimeout(()=>{
+    window.print();
+    // Clean up after print dialog closes
+    setTimeout(()=>target.classList.remove('pdf-target'), 500);
+  }, 200);
+}
 
 // ═══════════════════════════════════════════════
 // TYPE
