@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>PrepInsta – B2I Analytics Bot</title>
+<link rel="icon" type="image/png" href="https://i.postimg.cc/RF4GjyQT/LOGO.png">
+<meta property="og:title" content="PrepInsta B2I Analytics Bot">
+<meta property="og:description" content="Upload CSV or Excel and generate student analytics reports instantly.">
+<meta property="og:image" content="https://i.postimg.cc/RF4GjyQT/LOGO.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="PrepInsta B2I Analytics Bot">
+<meta name="twitter:description" content="Upload CSV or Excel and generate student analytics reports instantly.">
+<meta name="twitter:image" content="https://i.postimg.cc/RF4GjyQT/LOGO.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -13,15 +22,28 @@
   --accent:#00c896;--accent2:#69f0ae;--success:#00c896;--warning:#f59e0b;
   --danger:#f85149;--text:#d4e8d4;--text2:#7a9e7a;
   --best:#00c896;--good:#69f0ae;--avg:#f59e0b;--poor:#f85149;
+  --chart-text:#7a9e7a;--chart-grid:#243024;
+}
+body.light{
+  --bg:#f6faf8;--surface:#ffffff;--surface2:#eef7f3;--border:#cfe3da;
+  --accent:#009f78;--accent2:#00c896;--success:#078a68;--warning:#b86b00;
+  --danger:#c7362f;--text:#10231c;--text2:#536e64;
+  --best:#078a68;--good:#009f78;--avg:#b86b00;--poor:#c7362f;
+  --chart-text:#536e64;--chart-grid:#d7e7e0;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
 
 /* HEADER */
 .hdr{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-.logo{display:flex;align-items:center;gap:10px;font-size:19px;font-weight:700}
+.logo{display:flex;align-items:center;gap:14px;font-size:19px;font-weight:700}
 .logo-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px}
+.logo-img{width:76px;height:52px;object-fit:contain;background:transparent;border-radius:0;padding:0;display:block;margin:-6px 0}
 .pill{font-size:11px;background:var(--accent2);color:#fff;padding:2px 9px;border-radius:12px;font-weight:500}
+.theme-toggle{display:inline-flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:999px;color:var(--text);padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;box-shadow:0 2px 10px rgba(0,0,0,.18)}
+.theme-toggle:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.theme-toggle .knob{width:18px;height:18px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px rgba(0,200,150,.12)}
+body.light .theme-toggle .knob{background:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.16)}
 
 /* SCREENS */
 .screen{display:none}.screen.active{display:block}
@@ -86,14 +108,15 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .tc{display:none}.tc.active{display:block}
 
 /* TABLES */
-.tw{overflow-x:auto;border-radius:10px;border:1px solid var(--border)}
+.tw{overflow:auto;border-radius:10px;border:1px solid var(--border);max-height:68vh;position:relative}
+.tw table{min-width:max-content}
 table{width:100%;border-collapse:collapse;font-size:13px}
 thead tr{background:var(--surface2)}
 /* thead th is defined below in COLUMN HEADER FILTERS section */
 tbody tr{border-bottom:1px solid var(--border)}
 tbody tr:last-child{border-bottom:none}
 tbody tr:hover{background:rgba(0,200,150,.05)}
-tbody td{padding:8px 11px;white-space:nowrap}
+tbody td{padding:8px 11px;white-space:nowrap;vertical-align:top}
 .trow{background:var(--surface2)!important;font-weight:700}
 .att-row{background:rgba(248,81,73,.05)!important}
 
@@ -205,10 +228,10 @@ tbody td{padding:8px 11px;white-space:nowrap}
 .insight-box{margin-top:14px}
 
 /* COLUMN HEADER FILTERS */
-thead th{padding:9px 22px 9px 11px;text-align:left;font-weight:600;color:var(--text2);
-  white-space:normal;word-break:break-word;min-width:60px;
-  border-bottom:1px solid var(--border);line-height:1.3;vertical-align:top;
-  position:relative}
+thead th{padding:9px 24px 9px 11px;text-align:left;font-weight:600;color:var(--text2);
+  white-space:normal;word-break:break-word;min-width:110px;max-width:260px;
+  border-bottom:1px solid var(--border);line-height:1.35;vertical-align:top;
+  position:sticky;top:0;z-index:5;background:var(--surface2)}
 .sort-ind{font-size:10px;color:var(--accent);margin-left:2px}
 .col-filter-btn{position:absolute;right:3px;top:50%;transform:translateY(-50%);
   background:none;border:1px solid transparent;border-radius:3px;
@@ -267,21 +290,48 @@ thead th:hover .col-filter-btn{opacity:1}
 .bot-dl-btn{display:inline-flex;align-items:center;gap:5px;background:rgba(0,200,150,.12);border:1px solid var(--accent);color:var(--accent);border-radius:6px;font-size:11px;font-weight:600;padding:5px 11px;cursor:pointer;margin-top:8px;transition:all .15s}
 .bot-dl-btn:hover{background:rgba(0,200,150,.22)}
 
+
+/* PRIME SKILL SETUP */
+.setup-page{padding:22px 24px;max-width:1400px;margin:0 auto}
+.setup-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.setup-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.setup-tools input{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;outline:none;min-width:260px}
+.setup-tools input:focus{border-color:var(--accent)}
+.setup-note{background:rgba(0,200,150,.08);border:1px solid rgba(0,200,150,.25);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--text);line-height:1.5;margin-bottom:14px}
+.setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+.setup-chart-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;min-height:320px}
+.setup-chart-card h3{font-size:13px;color:var(--text2);margin-bottom:10px}
+.rule-cell{display:flex;gap:6px;align-items:center;min-width:190px}
+.rule-cell select,.rule-cell input{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:5px 7px;font-size:12px;outline:none}
+.rule-cell select{width:62px}.rule-cell input{width:78px}
+.rule-cell select:focus,.rule-cell input:focus{border-color:var(--accent)}
+.skill-check{accent-color:var(--accent);width:15px;height:15px;cursor:pointer}
+#prime-setup-error{display:none;margin-top:10px;color:var(--danger);font-size:13px}
+@media(max-width:900px){.setup-grid{grid-template-columns:1fr}.setup-tools input{min-width:180px}}
+
 /* PRINT */
 @media print{
-  .hdr,.ract,.filt,.tabs,.moverlay,.btn,.ttoggle,.skill-btn,#prime-opts,#ass-opts,.toast,.col-filter-btn,.col-filter-popup,.chat-fab,.chat-panel{display:none!important}
-  body{background:#fff!important;color:#111!important}
+  .ract,.filt,.tabs,.moverlay,.btn,.ttoggle,.skill-btn,#prime-opts,#ass-opts,.toast,.col-filter-btn,.col-filter-popup,.chat-fab,.chat-panel,.theme-toggle{display:none!important}
+  body{background:#fff!important;color:#000!important}
+  body *{color:#000!important;box-shadow:none!important;text-shadow:none!important}
+  .hdr{display:flex!important;position:static!important;background:#fff!important;color:#000!important;border-bottom:1px solid #999!important;padding:10px 20px!important;page-break-after:avoid!important}
+  .logo{color:#000!important}
+  .logo span{color:#000!important;-webkit-text-fill-color:#000!important}
+  .logo-img{width:88px!important;height:58px!important;object-fit:contain!important;background:transparent!important;padding:0!important;border-radius:0!important;margin:-4px 0!important}
+  .pill{background:#eee!important;color:#000!important;border:1px solid #999!important}
   .screen{display:none!important}
   .screen.pdf-target{display:block!important}
   .rpage,.dpage{padding:10px}
-  table{font-size:11px}
-  .mc{border:1px solid #ccc}
+  table{font-size:11px;border-collapse:collapse!important}
+  th,td{color:#000!important;border-color:#999!important}
+  thead th{background:#efefef!important;color:#000!important;position:static!important}
+  .mc{border:1px solid #999!important;background:#fff!important}
   canvas{max-width:100%!important}
   .cgrid{display:block!important}
   .chart-box{page-break-inside:avoid;margin-bottom:16px}
-  h2,h3,.stitle{color:#111!important}
-  .val,.lbl{color:#111!important}
-  .tw{overflow:visible!important;max-height:none!important}
+  h2,h3,.stitle,.val,.lbl,.sub{color:#000!important}
+  .tw{overflow:visible!important;max-height:none!important;border-color:#999!important}
+  .tw table{min-width:100%!important}
 }
 </style>
 </head>
@@ -290,11 +340,15 @@ thead th:hover .col-filter-btn{opacity:1}
 <!-- HEADER -->
 <div class="hdr">
   <div class="logo">
-    <div class="logo-icon">🚀</div>
+    <img src="https://i.postimg.cc/RF4GjyQT/LOGO.png" class="logo-img" alt="PrepInsta Logo"/>
     <span>PrepInsta</span>
     <span class="pill">B2I Analytics Bot</span>
   </div>
-  <div id="hdr-right" style="font-size:13px;color:var(--text2)"></div>
+  <div id="hdr-right" style="font-size:13px;color:var(--text2)">
+    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Switch theme">
+      <span class="knob"></span><span id="theme-toggle-text">Light Mode</span>
+    </button>
+  </div>
 </div>
 
 <!-- ══════════════════════════════════════════
@@ -331,14 +385,7 @@ thead th:hover .col-filter-btn{opacity:1}
       </div>
 
       <div id="prime-opts">
-        <div class="fg">
-          <label>Skills to Analyse <span class="req">*</span></label>
-          <button class="skill-btn" onclick="openModal()">
-            <span id="sk-lbl">🔍 Click to select skills…</span>
-            <span id="sk-badge" class="sk-cnt" style="display:none">0 selected</span>
-          </button>
-        </div>
-        <div id="sk-tags" style="margin-top:9px"></div>
+        <div class="info-box">Prime mode will first read the uploaded file, detect all skill columns after <strong>Overall Completion %</strong>, and then open a second page where you can select skills and set benchmark rules for each skill.</div>
       </div>
 
       <div id="ass-opts" style="display:none">
@@ -366,7 +413,72 @@ thead th:hover .col-filter-btn{opacity:1}
 </div>
 
 <!-- ══════════════════════════════════════════
-     SCREEN 2 — RESULTS
+     SCREEN 2 — PRIME SKILL SETUP
+══════════════════════════════════════════ -->
+<div id="s-prime-setup" class="screen">
+  <div class="setup-page">
+    <div class="setup-head">
+      <div>
+        <div class="rtitle" id="ps-title">Prime Skill Setup</div>
+        <div class="rmeta" id="ps-meta"></div>
+      </div>
+      <div class="ract">
+        <button class="btn btn-s" onclick="goHome()">← Upload Again</button>
+        <button class="btn btn-p" onclick="finishPrimeSetup()">Generate Final Report →</button>
+      </div>
+    </div>
+
+    <div class="setup-note">
+      The app has detected skill-wise score columns from the uploaded Prime file. Select any number of skills. For every selected skill, define the rule for <strong>Skill Course Started</strong> and <strong>Skill Course Completed</strong>. Example: Score <strong>&gt;= 50</strong> means COURSE STARTED.
+    </div>
+
+    <div class="mgrid" id="ps-cards"></div>
+
+    <div class="setup-grid">
+      <div class="setup-chart-card" style="grid-column:1 / -1">
+        <h3>How this page works</h3>
+        <div class="info-box" style="margin-bottom:10px">First 11 base columns are treated as student/profile columns. Every column after <strong>Overall Completion %</strong> is treated as a skill column. <strong>Number of Courses Completed</strong> is recalculated by counting all skill scores ≥ 80.</div>
+        <div class="tw" style="max-height:240px"><table>
+          <thead><tr><th>Rule</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Started Rule</td><td>If skill score matches the rule, status becomes COURSE STARTED.</td></tr>
+            <tr><td>Completed Rule</td><td>If skill score matches the rule, status becomes COURSE COMPLETED.</td></tr>
+            <tr><td>Default Started</td><td>Score &gt;= 50</td></tr>
+            <tr><td>Default Completed</td><td>Score &gt;= 80</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ctitle">Skill Selection + Benchmark Customisation</div>
+      <div class="setup-tools">
+        <input id="ps-search" placeholder="Search skill name…" oninput="filterPrimeSetupSkills()"/>
+        <button class="btn btn-sm btn-s" onclick="primeSetupSelectAll(true)">Select All</button>
+        <button class="btn btn-sm btn-s" onclick="primeSetupSelectAll(false)">Clear All</button>
+        <button class="btn btn-sm btn-s" onclick="primeSetupTopN(5)">Select Top 5</button>
+        <button class="btn btn-sm btn-s" onclick="primeSetupTopN(10)">Select Top 10</button>
+        <button class="btn btn-sm btn-s" onclick="primeSetupTopN(23)">Select Top 23</button>
+        <span id="ps-count" style="font-size:12px;color:var(--text2);margin-left:auto"></span>
+      </div>
+      <div class="tw" style="max-height:62vh">
+        <table id="ps-table">
+          <thead>
+            <tr>
+              <th>Select</th><th>Skill Column</th><th>Column Sum</th><th>Average</th>
+              <th>Skill Course Started Rule</th><th>Skill Course Completed Rule</th>
+            </tr>
+          </thead>
+          <tbody id="ps-tbody"></tbody>
+        </table>
+      </div>
+      <div id="prime-setup-error"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 3 — RESULTS
 ══════════════════════════════════════════ -->
 <div id="s-results" class="screen">
   <div class="rpage">
@@ -377,6 +489,7 @@ thead th:hover .col-filter-btn{opacity:1}
       </div>
       <div class="ract">
         <button class="btn btn-s" onclick="goHome()">← New Report</button>
+        <button class="btn btn-s" id="r-back-setup" style="display:none" onclick="goPrimeSetup()">← Skill Setup</button>
         <button class="btn btn-g" onclick="doDownload()">⬇️ Download Excel</button>
         <button class="btn btn-s" onclick="downloadPDF('report')">🧾 Download PDF</button>
         <button class="btn btn-s" onclick="showStudentInsight()">🔎 Student SWOT</button>
@@ -392,7 +505,7 @@ thead th:hover .col-filter-btn{opacity:1}
 </div>
 
 <!-- ══════════════════════════════════════════
-     SCREEN 3 — DASHBOARD
+     SCREEN 4 — DASHBOARD
 ══════════════════════════════════════════ -->
 <div id="s-dash" class="screen">
   <div class="dpage">
@@ -403,6 +516,7 @@ thead th:hover .col-filter-btn{opacity:1}
       </div>
       <div class="ract">
         <button class="btn btn-s" onclick="goResults()">← Back to Report</button>
+        <button class="btn btn-s" id="d-back-setup" style="display:none" onclick="goPrimeSetup()">← Skill Setup</button>
         <button class="btn btn-s" onclick="goHome()">🏠 Home</button>
         <button class="btn btn-s" onclick="downloadPDF('dashboard')">🧾 Download PDF</button>
         <button class="btn btn-s" onclick="showStudentInsight()">🔎 Student SWOT</button>
@@ -515,7 +629,11 @@ const S = {
   selSkills: [],
   file: null,
   data: null,
-  kpiFilter: null
+  pendingPrime: null,
+  primeSkillCfg: [],
+  primeSetupChart: null,
+  kpiFilter: null,
+  primeHelperVisible: false
 };
 const charts = {};
 const sortState = {};
@@ -549,6 +667,44 @@ const dataLabelPlugin = {
 Chart.register(dataLabelPlugin);
 
 // ═══════════════════════════════════════════════
+// THEME TOGGLE
+// ═══════════════════════════════════════════════
+function cssVar(name){ return getComputedStyle(document.body).getPropertyValue(name).trim(); }
+function initTheme(){
+  const saved=localStorage.getItem('nexisTheme')||'dark';
+  document.body.classList.toggle('light',saved==='light');
+  refreshThemeToggle();
+  setTimeout(updateChartTheme,120);
+}
+function toggleTheme(){
+  const light=!document.body.classList.contains('light');
+  document.body.classList.toggle('light',light);
+  localStorage.setItem('nexisTheme',light?'light':'dark');
+  refreshThemeToggle();
+  setTimeout(updateChartTheme,80);
+}
+function refreshThemeToggle(){
+  const t=document.getElementById('theme-toggle-text');
+  if(t) t.textContent=document.body.classList.contains('light')?'Dark Mode':'Light Mode';
+}
+function updateChartTheme(){
+  const txt=cssVar('--chart-text')||cssVar('--text2')||'#7a9e7a';
+  const grid=cssVar('--chart-grid')||cssVar('--border')||'#243024';
+  Object.values(charts||{}).forEach(ch=>{
+    try{
+      if(ch.options?.plugins?.legend?.labels) ch.options.plugins.legend.labels.color=txt;
+      if(ch.options?.scales){
+        Object.values(ch.options.scales).forEach(sc=>{
+          if(sc.ticks) sc.ticks.color=txt;
+          if(sc.grid) sc.grid.color=grid;
+        });
+      }
+      ch.update('none');
+    }catch(e){}
+  });
+}
+
+// ═══════════════════════════════════════════════
 // NAVIGATION
 // ═══════════════════════════════════════════════
 function show(id){
@@ -556,30 +712,36 @@ function show(id){
   document.getElementById(id).classList.add('active');
 }
 function goHome(){
-  show('s-upload'); S.data=null; S.kpiFilter=null;
+  show('s-upload'); S.data=null; S.pendingPrime=null; S.primeSkillCfg=[]; S.kpiFilter=null; S.primeHelperVisible=false;
+  if(S.primeSetupChart){try{S.primeSetupChart.destroy();}catch(e){} S.primeSetupChart=null;}
   S._primeResD=null; S._assResD=null;
   document.getElementById('r-filt').style.display='none';
   document.getElementById('r-filt').innerHTML='';
   document.getElementById('insight-box-report').innerHTML='';
 }
 function goResults(){ show('s-results'); }
+function goPrimeSetup(){
+  if(S.pendingPrime){
+    show('s-prime-setup');
+    updatePrimeSetupCount();
+    return;
+  }
+  goHome();
+}
 function goDash(){ show('s-dash'); renderDash(); }
 
+function safeFileName(v){ return String(v||'report').replace(/[^a-z0-9\-_]+/gi,'_').replace(/^_+|_+$/g,'')||'report'; }
 function downloadPDF(mode){
-  // Map mode to screen ID
   const screenId = mode==='dashboard' ? 's-dash' : 's-results';
   const target = document.getElementById(screenId);
   if(!target){ alert('Nothing to export yet. Please load data first.'); return; }
-
-  // Mark the target screen for print CSS
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('pdf-target'));
   target.classList.add('pdf-target');
-
-  // Short delay so charts finish any pending render
+  const oldTitle=document.title;
+  document.title=safeFileName(`${S.college}_${S.report}_${mode}_PDF`);
   setTimeout(()=>{
     window.print();
-    // Clean up after print dialog closes
-    setTimeout(()=>target.classList.remove('pdf-target'), 500);
+    setTimeout(()=>{target.classList.remove('pdf-target');document.title=oldTitle;}, 700);
   }, 200);
 }
 
@@ -612,7 +774,7 @@ function buildGrid(){
     </label>`).join('');
   updMCnt();
 }
-function esc(s){ return s.replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function esc(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 function togSk(s,chk){
   s = SK.find(x=>x===s) || s;
   if(chk && !S.selSkills.includes(s)) S.selSkills.push(s);
@@ -647,7 +809,9 @@ function confirmSk(){
 }
 function updSkBtn(){
   const n=S.selSkills.length;
-  document.getElementById('sk-lbl').textContent=n>0?n+' skill(s) selected':'🔍 Click to select skills…';
+  const lbl=document.getElementById('sk-lbl');
+  if(!lbl) return;
+  lbl.textContent=n>0?n+' skill(s) selected':'🔍 Click to select skills…';
   const b=document.getElementById('sk-badge');
   b.style.display=n>0?'inline':'none';
   b.textContent=n+' selected';
@@ -682,9 +846,9 @@ function loadFile(f){
 function chkReady(){
   const ok = document.getElementById('clg').value.trim() &&
               document.getElementById('rpt').value.trim() &&
-              S.file &&
-              (S.type==='assessment' || S.selSkills.length>0);
+              S.file;
   document.getElementById('gen-btn').disabled=!ok;
+  document.getElementById('gen-btn').textContent=S.type==='prime'?'Next: Select Skills & Benchmarks →':'⚡ Generate Report';
 }
 
 // ═══════════════════════════════════════════════
@@ -700,15 +864,21 @@ async function doGenerate(){
     const ext=S.file.name.split('.').pop().toLowerCase();
     let rows = ext==='csv' ? await parseCSV(S.file) : await parseXLSX(S.file);
     if(!rows||rows.length<2) throw new Error('File is empty or unreadable');
-    S.data = S.type==='prime' ? procPrime(rows) : procAssess(rows);
-    renderResults();
-    show('s-results');
+    if(S.type==='prime'){
+      S.pendingPrime=preparePrimeSetup(rows);
+      renderPrimeSetup();
+      show('s-prime-setup');
+    }else{
+      S.data=procAssess(rows);
+      renderResults();
+      show('s-results');
+    }
   }catch(e){
     showErr('Error: '+e.message);
     console.error(e);
   }finally{
     document.getElementById('gen-btn').disabled=false;
-    document.getElementById('gen-btn').textContent='⚡ Generate Report';
+    document.getElementById('gen-btn').textContent=S.type==='prime'?'Next: Select Skills & Benchmarks →':'⚡ Generate Report';
   }
 }
 function parseCSV(f){
@@ -732,25 +902,143 @@ function parseXLSX(f){
 }
 
 // ═══════════════════════════════════════════════
-// PRIME PROCESSING
+// PRIME SETUP + PROCESSING
 // ═══════════════════════════════════════════════
-function procPrime(rows){
-  // Find header row
-  let hi=0;
-  for(let i=0;i<Math.min(rows.length,10);i++){
-    const r=rows[i];
-    if(r.some(c=>typeof c==='string'&&
-        (c.toLowerCase().includes('first name')||c.toLowerCase().includes('registration')||
-         c.toLowerCase().includes('user id')))){
-      hi=i; break;
+function toNum(v){
+  if(v===null||v===undefined||v==='') return 0;
+  const n=parseFloat(String(v).replace(/,/g,'').replace('%',''));
+  return isNaN(n)?0:n;
+}
+
+// Fuzzy matching helpers for messy names / branches
+function normTxt(v){
+  return String(v||'')
+    .toLowerCase()
+    .replace(/&/g,' and ')
+    .replace(/[^a-z0-9]+/g,' ')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+function compactTxt(v){ return normTxt(v).replace(/\s+/g,''); }
+function titleCase(v){
+  return String(v||'').toLowerCase().replace(/\b\w/g,m=>m.toUpperCase()).trim();
+}
+const BRANCH_RULES=[
+  {canon:'CSE - AI/ML',terms:['cse aiml','cse ai ml','cs aiml','computer science aiml','computer science artificial intelligence machine learning','artificial intelligence machine learning','ai ml','aiml']},
+  {canon:'CSE - AI & DS',terms:['cse aids','cse ai ds','cse ads','cs aids','artificial intelligence data science','ai and ds','ai ds','aids']},
+  {canon:'CSE - Data Science',terms:['cse data science','cs data science','computer science data science','data science']},
+  {canon:'CSE',terms:['cse','cs','computer science','computer science engineering','computer science and engineering']},
+  {canon:'IT',terms:['it','information technology']},
+  {canon:'ECE',terms:['ece','ec','electronics communication','electronics and communication','electronics communication engineering']},
+  {canon:'EEE',terms:['eee','electrical electronics','electrical and electronics','electrical electronics engineering']},
+  {canon:'EE',terms:['ee','electrical','electrical engineering']},
+  {canon:'EIE',terms:['eie','electronics instrumentation','electronics and instrumentation','instrumentation']},
+  {canon:'MECH',terms:['mech','mechanical','mechanical engineering']},
+  {canon:'CIVIL',terms:['civil','civil engineering']},
+  {canon:'CHEMICAL',terms:['chemical','chemical engineering']},
+  {canon:'BIOTECH',terms:['biotech','bio technology','biotechnology']},
+  {canon:'MBA',terms:['mba','master business administration','business administration']},
+  {canon:'MCA',terms:['mca','master computer applications','computer applications']},
+  {canon:'BCA',terms:['bca','bachelor computer applications']},
+  {canon:'BBA',terms:['bba','bachelor business administration']}
+];
+function normalizeBranchName(raw){
+  const original=String(raw||'').replace(/\s+/g,' ').trim();
+  if(!original) return '';
+  let n=normTxt(original)
+    .replace(/\b(b tech|btech|b e|be|bachelor of|degree|branch|branches|dept|department|engineering|technology|engg)\b/g,' ')
+    .replace(/\s+/g,' ')
+    .trim();
+  const compact=n.replace(/\s+/g,'');
+  for(const rule of BRANCH_RULES){
+    for(const term of rule.terms){
+      const t=compactTxt(term);
+      if(compact===t || compact.includes(t) || t.includes(compact)) return rule.canon;
     }
   }
-  const hdrs=rows[hi].map(h=>String(h||'').trim());
-  const hl=hdrs.map(h=>h.toLowerCase());
-  const drows=rows.slice(hi+1).filter(r=>r.some(c=>c!==''&&c!==null&&c!==undefined));
-
-  // Column map
+  return titleCase(original);
+}
+function levenshtein(a,b){
+  a=String(a||''); b=String(b||'');
+  const al=a.length, bl=b.length;
+  if(!al) return bl; if(!bl) return al;
+  const dp=Array(bl+1).fill(0).map((_,i)=>i);
+  for(let i=1;i<=al;i++){
+    let prev=dp[0]; dp[0]=i;
+    for(let j=1;j<=bl;j++){
+      const tmp=dp[j];
+      dp[j]=Math.min(dp[j]+1,dp[j-1]+1,prev+(a[i-1]===b[j-1]?0:1));
+      prev=tmp;
+    }
+  }
+  return dp[bl];
+}
+function simScore(a,b){
+  a=compactTxt(a); b=compactTxt(b);
+  if(!a||!b) return 0;
+  if(a===b) return 1;
+  if(a.includes(b)||b.includes(a)) return Math.min(a.length,b.length)/Math.max(a.length,b.length)+0.25;
+  return 1-(levenshtein(a,b)/Math.max(a.length,b.length));
+}
+const MATCH_STOP_WORDS=new Set(['the','and','for','with','give','table','score','more','less','than','who','name','student','students','branch','branches','year','batch','from','about','that','this','what','show','list','find','get','has','have','all','are','not','can','data','their','email','mobile','number','phone','registration','reg','percent','above','below','over','under','high','low','good','poor','best','top','rank','started','completed','attention','full','profile','report','detail','details','info','information','please','tell','me','of','in','to']);
+function usefulTokens(q){ return normTxt(q).split(' ').filter(w=>w.length>1&&!MATCH_STOP_WORDS.has(w)); }
+function bestStudentMatch(query,students,nameFn){
+  const tokens=usefulTokens(query);
+  const needle=tokens.join(' ');
+  const cNeedle=compactTxt(needle);
+  if(!cNeedle || cNeedle.length<3) return null;
+  let best=null, bestScore=0;
+  for(const s of students){
+    const nm=nameFn(s)||'';
+    const nName=normTxt(nm);
+    const cName=compactTxt(nm);
+    const reg=compactTxt(s.reg||s.registration||'');
+    const email=compactTxt(s.email||'');
+    let score=0;
+    if(reg && (reg===cNeedle || reg.includes(cNeedle) || cNeedle.includes(reg))) score=1;
+    if(email && (email.includes(cNeedle) || cNeedle.includes(email))) score=Math.max(score,.98);
+    if(nName.includes(needle) || cName.includes(cNeedle)) score=Math.max(score,.96);
+    const coverage=tokens.length?tokens.filter(t=>nName.includes(t)||cName.includes(compactTxt(t))).length/tokens.length:0;
+    score=Math.max(score, coverage*.82, simScore(needle,nm));
+    if(score>bestScore){ best=s; bestScore=score; }
+  }
+  return bestScore>=0.62 ? best : null;
+}
+function bestBranchMatch(query,branches){
+  if(!branches||!branches.length) return null;
+  const direct=normalizeBranchName(query);
+  const directHit=branches.find(b=>compactTxt(b)===compactTxt(direct));
+  if(directHit) return directHit;
+  const q=normTxt(query), cq=compactTxt(query);
+  let best=null, bestScore=0;
+  for(const b of branches){
+    const nb=normTxt(b), cb=compactTxt(b);
+    let score=0;
+    if(q.includes(nb)||cq.includes(cb)||cb.includes(cq)) score=.95;
+    score=Math.max(score, simScore(query,b));
+    for(const rule of BRANCH_RULES){
+      if(rule.canon===b){
+        for(const term of rule.terms){ if(cq.includes(compactTxt(term))) score=Math.max(score,.98); }
+      }
+    }
+    if(score>bestScore){ best=b; bestScore=score; }
+  }
+  return bestScore>=0.68 ? best : null;
+}
+function findPrimeHeader(rows){
+  for(let i=0;i<Math.min(rows.length,12);i++){
+    const r=rows[i].map(c=>String(c||'').toLowerCase().trim());
+    const hasName=r.some(c=>c.includes('first name'));
+    const hasReg=r.some(c=>c.includes('registration'));
+    const hasOverall=r.some(c=>c.includes('overall')&&c.includes('completion'));
+    if((hasName||hasReg)&&hasOverall) return i;
+  }
+  return 0;
+}
+function mapPrimeColumns(hdrs){
+  const hl=hdrs.map(h=>String(h||'').toLowerCase().trim());
   const C={};
+  C.sno = hl.findIndex(h=>h==='s no'||h==='s.no'||h==='sr no'||h==='serial number');
   C.fn  = hl.findIndex(h=>h.includes('first name')||h==='first');
   C.ln  = hl.findIndex(h=>h.includes('last name')||h==='last');
   C.reg = hl.findIndex(h=>h.includes('registration'));
@@ -761,36 +1049,167 @@ function procPrime(rows){
   C.cs  = hl.findIndex(h=>h.includes('courses started')||(h==='started'));
   C.cc  = hl.findIndex(h=>h.includes('courses completed')&&!h.includes('yet'));
   C.op  = hl.findIndex(h=>h.includes('overall')&&(h.includes('%')||h.includes('completion')));
-
-  // Skill column index map
-  const ski={};
-  S.selSkills.forEach(sk=>{
-    let idx=hdrs.findIndex(h=>h.toLowerCase()===sk.toLowerCase());
-    if(idx===-1) idx=hdrs.findIndex(h=>h.toLowerCase().includes(sk.toLowerCase()));
-    ski[sk]=idx;
+  return C;
+}
+function preparePrimeSetup(rows){
+  const hi=findPrimeHeader(rows);
+  const hdrs=rows[hi].map(h=>String(h||'').trim());
+  const drows=rows.slice(hi+1).filter(r=>r.some(c=>c!==''&&c!==null&&c!==undefined));
+  const C=mapPrimeColumns(hdrs);
+  const fixedIdx=new Set(Object.values(C).filter(i=>i>=0));
+  const skillStart=C.op>=0?C.op+1:11;
+  const candidates=[];
+  for(let i=skillStart;i<hdrs.length;i++){
+    const name=hdrs[i]||('Skill '+(i+1));
+    if(!name || fixedIdx.has(i)) continue;
+    const vals=drows.map(r=>toNum(r[i]));
+    const numericCount=vals.filter(v=>v!==0).length;
+    const sum=vals.reduce((a,v)=>a+v,0);
+    if(name.trim()) candidates.push({name:name.trim(),idx:i,sum,avg:drows.length?sum/drows.length:0,numericCount});
+  }
+  candidates.sort((a,b)=>b.sum-a.sum||a.name.localeCompare(b.name));
+  if(!candidates.length) throw new Error('No Prime skill columns found after Overall Completion %. Please check the CSV header.');
+  return{rows,hi,hdrs,drows,C,candidates};
+}
+function opOptions(v){
+  return ['>=','>','<=','<','='].map(o=>`<option value="${o}" ${o===v?'selected':''}>${o}</option>`).join('');
+}
+function renderRuleCell(cls,idx,op,val){
+  return `<div class="rule-cell"><span>If score</span><select class="${cls}-op" data-idx="${idx}">${opOptions(op)}</select><input class="${cls}-val" data-idx="${idx}" type="number" value="${val}" step="0.01"/><span>then yes</span></div>`;
+}
+function renderPrimeSetup(){
+  const p=S.pendingPrime;
+  if(!p) return;
+  S.primeSkillCfg=p.candidates.map(c=>({
+    ...c,selected:true,startOp:'>=',startVal:50,compOp:'>=',compVal:80
+  }));
+  document.getElementById('ps-title').textContent=S.college+' — Prime Skill Setup';
+  document.getElementById('ps-meta').textContent=`${S.report} · ${p.drows.length} students · ${p.candidates.length} skill columns detected`;
+  document.getElementById('ps-cards').innerHTML=`
+    <div class="mc"><div class="lbl">Students Found</div><div class="val" style="color:var(--accent)">${p.drows.length}</div></div>
+    <div class="mc"><div class="lbl">Skill Columns</div><div class="val" style="color:var(--warning)">${p.candidates.length}</div></div>
+    <div class="mc"><div class="lbl">Default Started Rule</div><div class="val" style="font-size:20px;color:var(--success)">Score ≥ 50</div></div>
+    <div class="mc"><div class="lbl">Default Completed Rule</div><div class="val" style="font-size:20px;color:var(--accent2)">Score ≥ 80</div></div>`;
+  renderPrimeSetupTable();
+  renderPrimeSetupChart();
+}
+function renderPrimeSetupTable(){
+  const tbody=document.getElementById('ps-tbody');
+  if(!tbody) return;
+  tbody.innerHTML=S.primeSkillCfg.map((c,i)=>`<tr data-name="${esc(c.name).toLowerCase()}">
+    <td><input class="skill-check ps-sel" type="checkbox" data-idx="${i}" ${c.selected?'checked':''} onchange="updatePrimeSetupCount()"></td>
+    <td><strong>${c.name}</strong><div style="font-size:11px;color:var(--text2)">Column ${c.idx+1}</div></td>
+    <td style="color:var(--accent);font-weight:700">${c.sum.toFixed(2)}</td>
+    <td>${c.avg.toFixed(2)}</td>
+    <td>${renderRuleCell('ps-start',i,c.startOp,c.startVal)}</td>
+    <td>${renderRuleCell('ps-comp',i,c.compOp,c.compVal)}</td>
+  </tr>`).join('');
+  updatePrimeSetupCount();
+  setTimeout(()=>initTableHeaders(document.getElementById('ps-table').parentElement),30);
+}
+function renderPrimeSetupChart(){
+  // Requirement: remove the bar/column chart from the Prime skill selection page.
+  if(S.primeSetupChart){try{S.primeSetupChart.destroy();}catch(e){}}
+  S.primeSetupChart=null;
+}
+function updatePrimeSetupCount(){
+  const selected=[...document.querySelectorAll('.ps-sel')].filter(cb=>cb.checked).length;
+  const cnt=document.getElementById('ps-count');
+  if(cnt) cnt.textContent=`${selected} selected · no skill limit`;
+}
+function filterPrimeSetupSkills(){
+  const q=(document.getElementById('ps-search')?.value||'').toLowerCase().trim();
+  document.querySelectorAll('#ps-tbody tr').forEach(tr=>{
+    tr.style.display=tr.dataset.name.includes(q)?'':'none';
   });
+}
+function primeSetupSelectAll(flag){
+  document.querySelectorAll('#ps-tbody tr').forEach(tr=>{
+    if(tr.style.display==='none') return;
+    const cb=tr.querySelector('.ps-sel'); if(cb) cb.checked=flag;
+  });
+  updatePrimeSetupCount();
+}
+function primeSetupTopN(n){
+  document.querySelectorAll('.ps-sel').forEach((cb,i)=>cb.checked=i<n);
+  updatePrimeSetupCount();
+}
+function readPrimeSetupConfig(){
+  S.primeSkillCfg=S.primeSkillCfg.map((c,i)=>{
+    const selected=document.querySelector(`.ps-sel[data-idx="${i}"]`)?.checked||false;
+    const startOp=document.querySelector(`.ps-start-op[data-idx="${i}"]`)?.value||'>=';
+    const startVal=toNum(document.querySelector(`.ps-start-val[data-idx="${i}"]`)?.value||50);
+    const compOp=document.querySelector(`.ps-comp-op[data-idx="${i}"]`)?.value||'>=';
+    const compVal=toNum(document.querySelector(`.ps-comp-val[data-idx="${i}"]`)?.value||80);
+    return{...c,selected,startOp,startVal,compOp,compVal};
+  });
+  return S.primeSkillCfg.filter(c=>c.selected);
+}
+function finishPrimeSetup(){
+  const err=document.getElementById('prime-setup-error');
+  const cfg=readPrimeSetupConfig();
+  if(!cfg.length){ if(err){err.style.display='block';err.textContent='Please select at least one skill.';} return; }
+  if(err){err.style.display='none';err.textContent='';}
+  S.selSkills=cfg.map(c=>c.name);
+  S.data=procPrime(S.pendingPrime.rows,cfg);
+  renderResults();
+  show('s-results');
+}
+function meetsRule(v,op,thr){
+  v=toNum(v); thr=toNum(thr);
+  if(op==='>') return v>thr;
+  if(op==='>=') return v>=thr;
+  if(op==='<') return v<thr;
+  if(op==='<=') return v<=thr;
+  if(op==='=') return Math.abs(v-thr)<0.0001;
+  return v>=thr;
+}
+function procPrime(rows,primeCfgs){
+  const hi=findPrimeHeader(rows);
+  const hdrs=rows[hi].map(h=>String(h||'').trim());
+  const drows=rows.slice(hi+1).filter(r=>r.some(c=>c!==''&&c!==null&&c!==undefined));
+  const C=mapPrimeColumns(hdrs);
+  const cfgs=(primeCfgs||[]).filter(c=>c&&c.selected!==false);
+  const skills=cfgs.map(c=>c.name);
+  const cfgBy=Object.fromEntries(cfgs.map(c=>[c.name,c]));
 
   const g=(row,i)=>i>=0?String(row[i]||'').trim():'';
-  const n=(row,i)=>i>=0?(parseFloat(row[i])||0):0;
+  const n=(row,i)=>i>=0?toNum(row[i]):0;
+
+  // Requirement from Demo tab: Number of Courses Completed is not taken from
+  // the raw “Courses Completed” column. It is computed as COUNTIF across
+  // every skill score column from AWS to the last skill column where score >= 80.
+  const skillStart=C.op>=0?C.op+1:11;
+  const fixedIdx=new Set(Object.values(C).filter(i=>i>=0));
+  const allSkillIdxs=[];
+  for(let i=skillStart;i<hdrs.length;i++){
+    if(hdrs[i] && !fixedIdx.has(i)) allSkillIdxs.push(i);
+  }
 
   const students=drows.map((row,i)=>{
     const fn=g(row,C.fn), ln=g(row,C.ln);
-    const cs=n(row,C.cs), cc=n(row,C.cc), op=n(row,C.op);
-    const scores={};
-    S.selSkills.forEach(sk=>{ scores[sk]=n(row,ski[sk]); });
-    const skCS={}, skCC={};
-    S.selSkills.forEach(sk=>{
-      skCS[sk]=scores[sk]>=10?'COURSE STARTED':'COURSE YET TO START';
-      skCC[sk]=scores[sk]===100?'COURSE COMPLETED':'COURSE YET TO COMPLETE';
+    const cs=n(row,C.cs);
+    const cc=allSkillIdxs.reduce((cnt,idx)=>cnt+(n(row,idx)>=80?1:0),0);
+    const op=n(row,C.op);
+    const scores={}, skCS={}, skCC={};
+    skills.forEach(sk=>{
+      const cfg=cfgBy[sk];
+      const v=n(row,cfg.idx);
+      scores[sk]=v;
+      skCS[sk]=meetsRule(v,cfg.startOp,cfg.startVal)?'COURSE STARTED':'COURSE YET TO START';
+      skCC[sk]=meetsRule(v,cfg.compOp,cfg.compVal)?'COURSE COMPLETED':'COURSE YET TO COMPLETE';
     });
+    const fullName=[fn,ln].filter(Boolean).join(' ');
+    const branch=normalizeBranchName(g(row,C.br));
     return{
-      i:i+1, fn, ln, name:[fn,ln].filter(Boolean).join(' '),
+      i:i+1, fn, ln, name:fullName,
       reg:g(row,C.reg), email:g(row,C.em), mob:g(row,C.mob),
-      branch:g(row,C.br), year:g(row,C.yr),
+      branchRaw:g(row,C.br), branch, year:g(row,C.yr),
       cs, cc, op, scores, skCS, skCC,
       oCS:cs>=1?'COURSE STARTED':'COURSE YET TO START',
       oCC:cc>=1?'COURSE COMPLETED':'COURSE YET TO BE COMPLETED',
-      att:cs===0||op<10
+      att:cs<1,
+      lowCompletion:op<10
     };
   }).filter(s=>s.fn||s.reg||s.email);
   students.forEach((s,i)=>s.i=i+1);
@@ -799,17 +1218,21 @@ function procPrime(rows){
   const bsum=(condFn,l1,l2)=>mkBSum(students,brs,condFn,l1,l2);
 
   return{
-    type:'prime', students, brs, skills:S.selSkills,
+    type:'prime', students, brs, skills, skillCfgs:cfgs,
+    skillRules:Object.fromEntries(cfgs.map(c=>[c.name,{startOp:c.startOp,startVal:c.startVal,compOp:c.compOp,compVal:c.compVal,sum:c.sum,avg:c.avg}])),
     oSt: bsum(s=>s.cs>=1,'COURSE STARTED','COURSE YET TO START'),
     oCo: bsum(s=>s.cc>=1,'COURSE COMPLETED','COURSE YET TO BE COMPLETED'),
-    skSum: Object.fromEntries(S.selSkills.map(sk=>[sk,{
-      st: bsum(s=>s.scores[sk]>=10,'COURSE STARTED','COURSE YET TO START'),
-      co: bsum(s=>s.scores[sk]===100,'COURSE COMPLETED','COURSE YET TO COMPLETE')
+    skSum: Object.fromEntries(skills.map(sk=>[sk,{
+      st: bsum(s=>s.skCS[sk]==='COURSE STARTED','COURSE STARTED','COURSE YET TO START'),
+      co: bsum(s=>s.skCC[sk]==='COURSE COMPLETED','COURSE COMPLETED','COURSE YET TO COMPLETE')
     }])),
     att: students.filter(s=>s.att),
+    low: students.filter(s=>s.lowCompletion),
     tot: students.length,
     totSt: students.filter(s=>s.cs>=1).length,
-    totCo: students.filter(s=>s.cc>=1).length
+    totYetStart: students.filter(s=>s.cs<1).length,
+    totCo: students.filter(s=>s.cc>=1).length,
+    highPerformers: students.filter(s=>s.cc>=3).length
   };
 }
 
@@ -871,7 +1294,7 @@ function procAssess(rows){
     const pct=totMax>0?(total/totMax*100):0;
     return{
       i:i+1, name:g(row,C.nm), email:g(row,C.em),
-      reg:g(row,C.reg), batch:g(row,C.bat), branch:g(row,C.br),
+      reg:g(row,C.reg), batch:g(row,C.bat), branchRaw:g(row,C.br), branch:normalizeBranchName(g(row,C.br)),
       sc, total, totMax, pct, status:getStatus(pct)
     };
   }).filter(s=>s.name||s.reg||s.email);
@@ -916,6 +1339,16 @@ function stClass(s){
 // ═══════════════════════════════════════════════
 // RENDER RESULTS
 // ═══════════════════════════════════════════════
+function showStudentInsight(){
+  if(!S.data){showToast('Generate a report first','err');return;}
+  const active=document.querySelector('.screen.active')?.id;
+  const boxId=active==='s-dash'?'insight-box-dash':'insight-box-report';
+  const box=document.getElementById(boxId);
+  if(!box) return;
+  box.innerHTML=buildSwotHTML(S.data,'Student Insight / SWOT');
+  box.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
 function renderResults(){
   const d=S.data;
   const dt=new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
@@ -923,6 +1356,8 @@ function renderResults(){
   document.getElementById('r-meta').textContent=
     (d.type==='prime'?'🎯 Prime Report':'📝 Assessment Report')+
     ' · '+d.tot+' students · '+dt;
+  const rBack=document.getElementById('r-back-setup');
+  if(rBack) rBack.style.display=(d.type==='prime'&&S.pendingPrime)?'inline-flex':'none';
   if(d.type==='prime') renderPrimeRes(d);
   else renderAssRes(d);
 }
@@ -933,9 +1368,10 @@ function renderPrimeRes(d){
   const coPct=(d.totCo/d.tot*100).toFixed(1);
   document.getElementById('r-cards').innerHTML=`<div class="mgrid">
     <div class="mc"><div class="lbl">Total Students</div><div class="val" style="color:var(--accent)">${d.tot}</div><div class="sub">${d.brs.length} branches</div></div>
-    <div class="mc"><div class="lbl">Course Started</div><div class="val" style="color:var(--success)">${d.totSt}</div><div class="sub">${stPct}% of total</div></div>
-    <div class="mc"><div class="lbl">Course Completed</div><div class="val" style="color:var(--accent2)">${d.totCo}</div><div class="sub">${coPct}% of total</div></div>
-    <div class="mc"><div class="lbl">Needs Attention</div><div class="val" style="color:var(--danger)">${d.att.length}</div><div class="sub">0 courses or &lt;10%</div></div>
+    <div class="mc"><div class="lbl">Students Started At Least 1 Course</div><div class="val" style="color:var(--success)">${d.totSt}</div><div class="sub">${stPct}% of total</div></div>
+    <div class="mc"><div class="lbl">Students Yet to Start (At-Risk)</div><div class="val" style="color:var(--danger)">${d.totYetStart}</div><div class="sub">from Number of Courses Started &lt; 1</div></div>
+    <div class="mc"><div class="lbl">Students Completed At Least 1 Course</div><div class="val" style="color:var(--accent2)">${d.totCo}</div><div class="sub">${coPct}% of total</div></div>
+    <div class="mc"><div class="lbl">High Performers (3+ Completed)</div><div class="val" style="color:var(--warning)">${d.highPerformers}</div><div class="sub">Number of Courses Completed ≥ 3</div></div>
     <div class="mc"><div class="lbl">Skills Analysed</div><div class="val" style="color:var(--warning)">${d.skills.length}</div><div class="sub">selected skills</div></div>
   </div>`;
   // Filter bar
@@ -953,8 +1389,10 @@ function renderPrimeRes(d){
       {val:'started',lbl:'Course Started'},
       {val:'not_started',lbl:'Not Started'},
       {val:'completed',lbl:'Completed ≥1'},
-      {val:'attention',lbl:'Needs Attention'}
+      {val:'attention',lbl:'Needs Attention'},
+      {val:'low_completion',lbl:'Completion <10%'}
     ],'applyPrimeFilters')}
+    <button class="btn btn-sm btn-s" onclick="togglePrimeHelperCols()" id="helper-toggle-btn">Show CS/CC Helper Columns</button>
     <button class="btn btn-sm btn-s" onclick="msClearId('pri-br');msClearId('pri-yr');msClearId('pri-st');document.getElementById('rsearch').value='';applyPrimeFilters()">✕ Reset</button>
     <span id="r-count" style="font-size:12px;color:var(--text2);margin-left:auto"></span>`;
 
@@ -994,10 +1432,10 @@ function renderPrimeRes(d){
     <td>${s.branch}</td><td>${s.year}</td>
     <td style="color:${s.cs===0?'var(--danger)':'var(--warning)'}">${s.cs}</td>
     <td style="color:${s.op<10?'var(--danger)':'var(--text)'}">${s.op.toFixed(2)}%</td>
-    <td>${s.cs===0?'<span class="b-ncs">No Course Started</span>':'<span class="b-ncc">Score &lt;10%</span>'}</td>
+    <td>${s.cs<1?'<span class="b-ncs">No Course Started</span>':(s.lowCompletion?'<span class="b-ncc">Score &lt;10%</span>':'')}</td>
   </tr>`).join('');
   html+=`<div class="tc" id="tc${ai}">
-    <div class="warn-box">⚠️ ${d.att.length} student(s) need attention — have not started any course OR overall score is below 10%</div>
+    <div class="warn-box">⚠️ ${d.att.length} student(s) need attention — have not started even one course</div>
     <div class="tw"><table>
       <thead><tr><th>#</th><th>Name</th><th>Reg No</th><th>Email</th><th>Mobile</th>
         <th>Branch</th><th>Year</th><th>Courses Started</th><th>Overall %</th><th>Reason</th></tr></thead>
@@ -1021,7 +1459,11 @@ function rePrimeResTab0(){
   if(fb.length) st=st.filter(s=>fb.includes(s.branch));
   if(fy.length) st=st.filter(s=>fy.includes(s.year));
   if(fst.length) st=st.filter(s=>fst.some(f=>
-    f==='started'?s.cs>=1:f==='not_started'?s.cs<1:f==='completed'?s.cc>=1:f==='attention'?s.att:false
+    f==='started'?s.cs>=1:
+    f==='not_started'?s.cs<1:
+    f==='completed'?s.cc>=1:
+    f==='attention'?s.att:
+    f==='low_completion'?s.lowCompletion:false
   ));
   if(q) st=st.filter(s=>(s.name||'').toLowerCase().includes(q)||(s.reg||'').toLowerCase().includes(q)||(s.email||'').toLowerCase().includes(q));
   const cnt=document.getElementById('r-count');
@@ -1029,6 +1471,10 @@ function rePrimeResTab0(){
   const skHdrs=d.skills.map(s=>`<th title="${s}">${s.length>14?s.slice(0,13)+'…':s}</th>`).join('');
   const skCSH=d.skills.map(s=>`<th title="${s} CS">${s.length>10?s.slice(0,9)+'…':s} CS</th>`).join('');
   const skCCH=d.skills.map(s=>`<th title="${s} CC">${s.length>10?s.slice(0,9)+'…':s} CC</th>`).join('');
+  const helperVisible=!!S.primeHelperVisible;
+  const helperHead=helperVisible?`<th>Overall CS</th>${skCSH}<th>Overall CC</th>${skCCH}`:'';
+  const ht=document.getElementById('helper-toggle-btn');
+  if(ht) ht.textContent=helperVisible?'Hide CS/CC Helper Columns':'Show CS/CC Helper Columns';
   const srows=st.map((s,i)=>{
     const skSC=d.skills.map(sk=>{
       const v=s.scores[sk]; const cl=v>=10?'var(--success)':v>0?'var(--warning)':'var(--text2)';
@@ -1041,27 +1487,31 @@ function rePrimeResTab0(){
       `<td><span class="${s.skCC[sk]==='COURSE COMPLETED'?'b-cc':'b-ncc'}">${s.skCC[sk]==='COURSE COMPLETED'?'✓':'○'}</span></td>`
     ).join('');
     return`<tr ${s.att?'class="att-row"':''}>
-      <td>${i+1}</td><td><strong>${s.fn}</strong>${s.ln?' '+s.ln:''}</td>
-      <td>${s.reg}</td><td>${s.email}</td><td>${s.mob}</td>
-      <td>${s.branch}</td><td>${s.year}</td>
+      <td>${i+1}</td><td>${s.email}</td><td><strong>${s.name}</strong></td>
+      <td>${s.reg}</td><td>${s.branch}</td><td>${s.year}</td>
       <td>${s.cs}</td><td>${s.cc}</td>
       ${skSC}
-      <td><span class="${s.oCS==='COURSE STARTED'?'b-cs':'b-ncs'}">${s.oCS==='COURSE STARTED'?'✓ Started':'✗ Not Yet'}</span></td>
+      ${helperVisible?`<td><span class="${s.oCS==='COURSE STARTED'?'b-cs':'b-ncs'}">${s.oCS==='COURSE STARTED'?'✓ Started':'✗ Not Yet'}</span></td>
       ${skCS}
       <td><span class="${s.oCC==='COURSE COMPLETED'?'b-cc':'b-ncc'}">${s.oCC==='COURSE COMPLETED'?'✓ Done':'○ Pending'}</span></td>
-      ${skCC}
+      ${skCC}`:''}
     </tr>`;
   }).join('');
   const body=document.getElementById('tc0-body');
   if(body) body.innerHTML=`<div class="tw"><table>
     <thead><tr>
-      <th>#</th><th>Name</th><th>Reg No</th><th>Email</th><th>Mobile</th>
-      <th>Branch</th><th>Year</th><th>Cs. Started</th><th>Cs. Completed</th>
-      ${skHdrs}<th>Overall CS</th>${skCSH}<th>Overall CC</th>${skCCH}
+      <th>S No</th><th>Email</th><th>Full Name</th><th>Registration Number</th>
+      <th>Branch</th><th>Year of Passing</th><th>Number of Courses Started</th><th>Number of Courses Completed</th>
+      ${skHdrs}${helperHead}
     </tr></thead>
     <tbody>${srows||'<tr><td colspan="20" class="empty">No students match the current filters</td></tr>'}</tbody>
   </table></div>`;
   setTimeout(()=>makeTablesSortable(body),30);
+}
+
+function togglePrimeHelperCols(){
+  S.primeHelperVisible=!S.primeHelperVisible;
+  rePrimeResTab0();
 }
 
 function mkSumTbl(s){
@@ -1233,12 +1683,15 @@ function renderDash(){
   const dt=new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
   document.getElementById('d-title').textContent='📊 TPO Dashboard — '+S.college;
   document.getElementById('d-meta').textContent=S.report+' · '+dt;
+  const dBack=document.getElementById('d-back-setup');
+  if(dBack) dBack.style.display=(d.type==='prime'&&S.pendingPrime)?'inline-flex':'none';
   Object.values(charts).forEach(c=>{try{c.destroy();}catch(e){}});
   for(const k in charts) delete charts[k];
   S.kpiFilter=null;
   document.getElementById('insight-box-dash').innerHTML='';
   if(d.type==='prime') renderPrimeDash(d);
   else renderAssDash(d);
+  setTimeout(updateChartTheme,250);
 }
 
 // ─── PRIME DASHBOARD ───────────────────────────
@@ -1248,10 +1701,10 @@ function renderPrimeDash(d){
   document.getElementById('d-metrics').innerHTML=`
     <div class="mc"><div class="lbl">Total Students</div><div class="val" style="color:var(--accent)">${d.tot}</div></div>
     <div class="mc"><div class="lbl">Total Branches</div><div class="val" style="color:var(--accent2)">${d.brs.length}</div></div>
-    <div class="mc"><div class="lbl">Skills Tracked</div><div class="val" style="color:var(--warning)">${d.skills.length}</div></div>
-    <div class="mc clickable" data-kpi="started" onclick="setDashFilter('started')"><div class="lbl">Started Rate</div><div class="val" style="color:var(--success)">${stP}%</div><div class="sub">${d.totSt} students · click to filter</div></div>
-    <div class="mc clickable" data-kpi="completed" onclick="setDashFilter('completed')"><div class="lbl">Completion Rate</div><div class="val" style="color:var(--accent2)">${coP}%</div><div class="sub">${d.totCo} students · click to filter</div></div>
-    <div class="mc clickable" data-kpi="attention" onclick="setDashFilter('attention')"><div class="lbl">Needs Attention</div><div class="val" style="color:var(--danger)">${d.att.length}</div><div class="sub">${(d.att.length/d.tot*100).toFixed(1)}% · click to filter</div></div>`;
+    <div class="mc clickable" data-kpi="started" onclick="setDashFilter('started')"><div class="lbl">Students Started At Least 1 Course</div><div class="val" style="color:var(--success)">${d.totSt}</div><div class="sub">${stP}% · click to filter</div></div>
+    <div class="mc clickable" data-kpi="not_started" onclick="setDashFilter('not_started')"><div class="lbl">Students Yet to Start (At-Risk)</div><div class="val" style="color:var(--danger)">${d.totYetStart}</div><div class="sub">click to filter</div></div>
+    <div class="mc clickable" data-kpi="completed" onclick="setDashFilter('completed')"><div class="lbl">Students Completed At Least 1 Course</div><div class="val" style="color:var(--accent2)">${d.totCo}</div><div class="sub">${coP}% · click to filter</div></div>
+    <div class="mc clickable" data-kpi="high" onclick="setDashFilter('high')"><div class="lbl">High Performers (3+ Completed)</div><div class="val" style="color:var(--warning)">${d.highPerformers}</div><div class="sub">click to filter</div></div>`;
   document.getElementById('d-swot').innerHTML=buildSwotHTML(d,'Prime Analytics');
 
   const yrs=[...new Set(d.students.map(s=>s.year).filter(Boolean))].sort();
@@ -1260,7 +1713,7 @@ function renderPrimeDash(d){
     <span class="flbl">Filter:</span>
     ${buildMultiSel('pri-br','Branch',d.brs,'applyPrimeFilters')}
     ${buildMultiSel('pri-yr','Year',yrs,'applyPrimeFilters')}
-    ${buildMultiSel('pri-st','Status',[{val:'started',lbl:'Started'},{val:'not_started',lbl:'Not Started'},{val:'completed',lbl:'Completed'},{val:'attention',lbl:'Needs Attention'}],'applyPrimeFilters')}
+    ${buildMultiSel('pri-st','Status',[{val:'started',lbl:'Started'},{val:'not_started',lbl:'Not Started'},{val:'completed',lbl:'Completed'},{val:'attention',lbl:'Needs Attention'},{val:'low_completion',lbl:'Completion <10%'}],'applyPrimeFilters')}
     <button class="btn btn-sm btn-s" onclick="msClearId('pri-br');msClearId('pri-yr');msClearId('pri-st');applyPrimeFilters()">✕ Reset</button>`;
 
   const blbls=d.oSt.rows.map(r=>r.b.replace('B.Tech ',''));
@@ -1293,7 +1746,7 @@ function renderPrimeDash(d){
           label:b.replace('B.Tech ',''),
           data:d.skills.map(sk=>{
             const bs=d.students.filter(s=>s.branch===b);
-            return bs.length?(bs.filter(s=>s.scores[sk]>=10).length/bs.length*100).toFixed(1):0;
+            return bs.length?(bs.filter(s=>s.skCS[sk]==='COURSE STARTED').length/bs.length*100).toFixed(1):0;
           }),
           backgroundColor:pal[i%pal.length]+'99',
           borderColor:pal[i%pal.length],borderWidth:1
@@ -1311,10 +1764,18 @@ function rePrimeLB(){
   let st=d.students;
   if(fb.length) st=st.filter(s=>fb.includes(s.branch));
   if(fy.length) st=st.filter(s=>fy.includes(s.year));
+  if(fst.length) st=st.filter(s=>fst.some(f=>
+    f==='started'?s.cs>=1:
+    f==='not_started'?s.cs<1:
+    f==='completed'?s.cc>=1:
+    f==='attention'?s.att:
+    f==='low_completion'?s.lowCompletion:false
+  ));
   // Apply KPI filter
   if(S.kpiFilter==='started') st=st.filter(s=>s.cs>=1);
   else if(S.kpiFilter==='not_started') st=st.filter(s=>s.cs<1);
   else if(S.kpiFilter==='completed') st=st.filter(s=>s.cc>=1);
+  else if(S.kpiFilter==='high') st=st.filter(s=>s.cc>=3);
   else if(S.kpiFilter==='attention') st=d.att.filter(s=>(!fb.length||fb.includes(s.branch))&&(!fy.length||fy.includes(s.year)));
   updatePrimeCharts(st,d.skills);
   const sorted=[...st].sort((a,b)=>b.cc-a.cc||b.op-a.op);
@@ -1322,7 +1783,7 @@ function rePrimeLB(){
     <div class="stitle">🏆 Leaderboard — Top by Course Completion</div>
     <div class="tw"><table>
       <thead><tr><th>Rank</th><th>Name</th><th>Reg No</th><th>Branch</th><th>Year</th>
-        <th>Cs. Started</th><th>Cs. Completed</th><th>Overall %</th></tr></thead>
+        <th>Number of Courses Started</th><th>Number of Courses Completed</th><th>Overall %</th></tr></thead>
       <tbody>${sorted.slice(0,50).map((s,i)=>`<tr>
         <td><strong>${i+1}</strong>${i===0?' 🥇':i===1?' 🥈':i===2?' 🥉':''}</td>
         <td>${s.fn}${s.ln?' '+s.ln:''}</td><td>${s.reg}</td>
@@ -1335,7 +1796,7 @@ function rePrimeLB(){
         </div></td>
       </tr>`).join('')}</tbody>
     </table></div>`;
-  const att=d.att.filter(s=>(!fb||s.branch===fb)&&(!fy||s.year===fy));
+  const att=d.att.filter(s=>(!fb.length||fb.includes(s.branch))&&(!fy.length||fy.includes(s.year)));
   document.getElementById('d-att').innerHTML=att.length?`
     <div class="stitle">⚠️ Students Needing Attention (${att.length})</div>
     <div class="tw"><table>
@@ -1501,20 +1962,20 @@ function buildPrimeWB(d,wb,ttl){
   // Sheet 1 — Student Report
   const h1=[ttl,...Array(10+d.skills.length*3).fill('')];
   const h2=[];
-  const h3=['S No','First Name','Last Name','Reg No','Email','Mobile','Branch','Year',
-    'Courses Started','Courses Completed',
+  const h3=['S No','Email','Full Name','Registration Number','Branch','Year of Passing',
+    'Number of Courses Started','Number of Courses Completed',
     ...d.skills,
     'Overall CS',...d.skills.map(s=>s+' CS'),
     'Overall CC',...d.skills.map(s=>s+' CC')];
   const rows=[h1,h2,h3];
   d.students.forEach(s=>{
-    rows.push([s.i,s.fn,s.ln,s.reg,s.email,s.mob,s.branch,s.year,s.cs,s.cc,
+    rows.push([s.i,s.email,s.name,s.reg,s.branch,s.year,s.cs,s.cc,
       ...d.skills.map(sk=>s.scores[sk]),
       s.oCS,...d.skills.map(sk=>s.skCS[sk]),
       s.oCC,...d.skills.map(sk=>s.skCC[sk])]);
   });
   const ws1=XLSX.utils.aoa_to_sheet(rows);
-  setColWidths(ws1,[5,18,14,16,28,14,14,8,10,10,...d.skills.map(()=>14),...Array(1+d.skills.length*2+1+d.skills.length).fill(22)]);
+  setColWidths(ws1,[5,28,26,16,16,12,18,20,...d.skills.map(()=>14),...Array(1+d.skills.length*2+1+d.skills.length).fill(22)]);
   XLSX.utils.book_append_sheet(wb,ws1,'Student Report');
 
   // Sheet 2 — Overall Summary
@@ -1530,6 +1991,13 @@ function buildPrimeWB(d,wb,ttl){
   const ws2=XLSX.utils.aoa_to_sheet(s2);
   setColWidths(ws2,[25,16,28,12]);
   XLSX.utils.book_append_sheet(wb,ws2,'Overall Summary');
+
+  // Sheet 3 — Skill Benchmark Rules
+  const sr=[[ttl],[],['Skill','Column Sum','Average','Started Operator','Started Benchmark','Completed Operator','Completed Benchmark']];
+  (d.skillCfgs||[]).forEach(c=>sr.push([c.name,c.sum?.toFixed?c.sum.toFixed(2):c.sum,c.avg?.toFixed?c.avg.toFixed(2):c.avg,c.startOp,c.startVal,c.compOp,c.compVal]));
+  const wsr=XLSX.utils.aoa_to_sheet(sr);
+  setColWidths(wsr,[30,14,12,18,18,20,20]);
+  XLSX.utils.book_append_sheet(wb,wsr,'Skill Rules');
 
   // Per-skill sheets
   d.skills.forEach(sk=>{
@@ -1552,9 +2020,9 @@ function buildPrimeWB(d,wb,ttl){
 
   // Needs Attention sheet
   const sa=[[ttl],[],[],
-    ['S No','First Name','Last Name','Reg No','Email','Mobile','Branch','Year','Courses Started','Overall %','Reason']];
+    ['S No','First Name','Last Name','Reg No','Email','Mobile','Branch','Year','Number of Courses Started','Overall %','Reason']];
   d.att.forEach((s,i)=>sa.push([i+1,s.fn,s.ln,s.reg,s.email,s.mob,s.branch,s.year,
-    s.cs,s.op.toFixed(2)+'%',s.cs===0?'No Course Started':'Low Score (<10%)']));
+    s.cs,s.op.toFixed(2)+'%','No Course Started']));
   const wsa=XLSX.utils.aoa_to_sheet(sa);
   setColWidths(wsa,[5,18,14,16,28,14,14,8,14,10,22]);
   XLSX.utils.book_append_sheet(wb,wsa,'Needs Attention');
@@ -1618,9 +2086,9 @@ function buildSwotHTML(d, audience){
         </div>
         <div class="swot-q" style="background:rgba(248,81,73,.07);border:1px solid rgba(248,81,73,.2)">
           <strong style="color:var(--danger)">⚠️ Weaknesses</strong>
-          <ul><li>${attPct}% students need immediate attention</li>
+          <ul><li>${attPct}% students have not started any course</li>
           <li>${(100-parseFloat(coPct)).toFixed(1)}% have not completed any course</li>
-          <li>${d.att.length} students scored below 10% overall</li></ul>
+          <li>${d.att.length} students have not started any course</li></ul>
         </div>
         <div class="swot-q" style="background:rgba(88,166,255,.07);border:1px solid rgba(88,166,255,.2)">
           <strong style="color:var(--accent)">🎯 Opportunities</strong>
@@ -2054,9 +2522,9 @@ function botSuggestCourses(d){
 function botProcess(msg){
   const d=S.data; const q=msg.toLowerCase().trim();
   if(!d){
-    if(/hi|hello|hey|namaste/i.test(q)) return "👋 Hi! I'm <strong>NeXis</strong> — PrepInsta's Analytics Assistant. Upload a CSV to get started!";
+    if(/hi|hello|hey|namaste/i.test(q)) return "👋 Hi! I'm <strong>Prep X</strong> — PrepInsta's Analytics Assistant. Upload a CSV to get started!";
     if(/course|suggest|prepinsta/i.test(q)) return botSuggestCourses(null);
-    if(/help|what can/i.test(q)) return '📋 Load a CSV first. NeXis can answer 200+ questions: rankings, scores, branches, placement, skill gaps, and more!';
+    if(/help|what can/i.test(q)) return '📋 Load a CSV first. Prep X can answer 200+ questions: rankings, scores, branches, placement, skill gaps, and more!';
     return '📂 Upload a CSV report first! Then ask me anything about your students.';
   }
   const isAss=d.type==='assessment', isPrime=d.type==='prime';
@@ -2081,11 +2549,11 @@ function botProcess(msg){
 
   /* help */
   if(/help|what can|commands/i.test(q))
-    return `🤖 <strong>NeXis can answer 200+ questions:</strong><br>
+    return `🤖 <strong>Prep X can answer 200+ questions:</strong><br>
 🏆 "Top 10 students" · "Bottom 10" · "Top per branch"<br>
 📊 "Average score" · "Median" · "Score distribution" · "Pass rate" · "% above 80"<br>
 ⚠️ "Who needs attention" · "At-risk" · "Weak per branch"<br>
-🌿 "Branch rankings" · "Best branch" · "Compare CSE vs ECE"<br>
+🌿 "Branch rankings" · "Best branch" · "Compare CSE vs ECE" · messy branch names supported<br>
 🎯 "Placement ready" · "Shortlist top 50" · "Below cutoff"<br>
 🔢 "Score above 70%" · "Score between 60 to 80"<br>
 🧠 "Skill-wise analysis" · "Skill gap" · "Suggest courses"<br>
@@ -2276,8 +2744,8 @@ function botProcess(msg){
     return {html:`📊 <strong>${filt.length} students scoring ${lo}–${hi}%</strong>`,table:{headers:['Rank','Name','Branch',isAss?'Batch':'Year',...xH,'Score','Band'],rows,filename:`range_${lo}_${hi}.xlsx`}};
   }
 
-  /* branch-specific */
-  const brMatch=d.brs.find(b=>q.includes(b.toLowerCase())||q.includes(b.replace(/b\.tech\s*/i,'').toLowerCase()));
+  /* branch-specific — fuzzy match supports CSE / C S E / Computer Science / spacing variations */
+  const brMatch=bestBranchMatch(q,d.brs);
   if(brMatch){
     const bs=d.students.filter(s=>s.branch===brMatch).sort((a,b)=>gSc(b)-gSc(a));
     const avg=bs.reduce((a,s)=>a+gSc(s),0)/bs.length,pass=bs.filter(s=>gSc(s)>=passT).length;
@@ -2298,22 +2766,18 @@ function botProcess(msg){
     return {html:`📊 <strong>Status Distribution</strong>`,table:{headers:['Status','Count','%'],rows,filename:'status_distribution.xlsx'}};
   }
 
-  /* find / profile (name / reg / email search) */
-  const _sw=new Set(['the','and','for','with','give','table','score','more','less','than','who','name','student','branch','year','batch','from','about','that','this','what','show','list','find','get','has','have','all','are','not','can','data','their','email','mobile','number','phone','registration','percent','above','below','over','under','high','low','good','poor','best','top','rank','started','completed','attention','full','profile','report','detail','info','information']);
-  const tokens=q.split(/\s+/).filter(w=>w.length>2&&!_sw.has(w));
-  for(const w of tokens){
-    const found=d.students.find(s=>{const nm=gNm(s).toLowerCase();return nm.includes(w)||(s.reg||'').toLowerCase()===w||(s.registration||'').toLowerCase()===w||(s.email||'').toLowerCase().includes(w);});
-    if(found){
-      const rank=sorted.findIndex(s=>s===found)+1;
-      const sc=gSc(found);
-      if(isAss){
-        const skRows=d.skCols&&d.skCols.length?d.skCols.map(sk=>[sk.name,found.sc&&found.sc[sk.name]!==undefined?found.sc[sk.name]+'/'+(sk.max||'?'):'-',found.sc&&found.sc[sk.name]!==undefined?((found.sc[sk.name]/(sk.max||1))*100).toFixed(0)+'%':'-']):[];
-        const baseHtml=`🔍 <strong>${found.name}</strong> · Branch: ${found.branch} · Batch: ${found.batch||'—'}<br>Reg: <strong>${getReg(found)}</strong> · Email: <strong>${getEmail(found)}</strong><br>Rank: <strong>#${rank}/${d.tot}</strong> · Score: <strong>${found.total}/${found.totMax} (${sc.toFixed(1)}%)</strong> · Status: <strong>${found.status}</strong> · Band: <strong>${sBand(sc)}</strong>`;
-        if(skRows.length) return {html:baseHtml,table:{headers:['Skill','Marks','Score%'],rows:skRows,filename:'profile_'+found.name.replace(/\W+/g,'_')+'.xlsx'}};
-        return baseHtml;
-      }
-      return `🔍 <strong>${gNm(found)}</strong> · Branch: ${found.branch} · Year: ${found.year||'—'}<br>Reg: <strong>${getReg(found)}</strong> · Email: <strong>${getEmail(found)}</strong><br>Rank: <strong>#${rank}/${d.tot}</strong> · Score: <strong>${sc.toFixed(1)}%</strong> · Band: <strong>${sBand(sc)}</strong>${found.att?'<br>⚠️ Flagged for attention':''}`;
+  /* find / profile (name / reg / email search) — fuzzy match handles first name, last name, full name, swapped order, partial spellings, reg, and email */
+  const found=bestStudentMatch(q,d.students,gNm);
+  if(found){
+    const rank=sorted.findIndex(s=>s===found)+1;
+    const sc=gSc(found);
+    if(isAss){
+      const skRows=d.skCols&&d.skCols.length?d.skCols.map(sk=>[sk.name,found.sc&&found.sc[sk.name]!==undefined?found.sc[sk.name]+'/'+(sk.max||'?'):'-',found.sc&&found.sc[sk.name]!==undefined?((found.sc[sk.name]/(sk.max||1))*100).toFixed(0)+'%':'-']):[];
+      const baseHtml=`🔍 <strong>${found.name}</strong> · Branch: ${found.branch} · Batch: ${found.batch||'—'}<br>Reg: <strong>${getReg(found)}</strong> · Email: <strong>${getEmail(found)}</strong><br>Rank: <strong>#${rank}/${d.tot}</strong> · Score: <strong>${found.total}/${found.totMax} (${sc.toFixed(1)}%)</strong> · Status: <strong>${found.status}</strong> · Band: <strong>${sBand(sc)}</strong>`;
+      if(skRows.length) return {html:baseHtml,table:{headers:['Skill','Marks','Score%'],rows:skRows,filename:'profile_'+found.name.replace(/\W+/g,'_')+'.xlsx'}};
+      return baseHtml;
     }
+    return `🔍 <strong>${gNm(found)}</strong> · Branch: ${found.branch} · Year: ${found.year||'—'}<br>Reg: <strong>${getReg(found)}</strong> · Email: <strong>${getEmail(found)}</strong><br>Rank: <strong>#${rank}/${d.tot}</strong> · Score: <strong>${sc.toFixed(1)}%</strong> · Band: <strong>${sBand(sc)}</strong>${found.att?'<br>⚠️ Flagged for attention':''}`;
   }
 
   /* smart fallback */
@@ -2322,7 +2786,7 @@ function botProcess(msg){
 }
 async function callAI(userMsg){
   const d=S.data;
-  let sys=`You are NeXis — PrepInsta's intelligent B2I Analytics Assistant.\nCollege: ${S.college||'N/A'}, Report: ${S.report||'N/A'}\n`;
+  let sys=`You are Prep X — PrepInsta's intelligent B2I Analytics Assistant.\nCollege: ${S.college||'N/A'}, Report: ${S.report||'N/A'}\n`;
   if(d){
     sys+=`Students: ${d.tot}, Branches: ${d.brs?.join(', ')}\n`;
     if(d.type==='prime') sys+=`Prime report. Started:${d.totSt} Completed:${d.totCo} At-risk:${d.att?.length}\nSkills: ${d.skills?.join(', ')}\n`;
@@ -2346,7 +2810,7 @@ function toggleChat(){
   const p=document.getElementById('chat-panel');
   p.classList.toggle('open');
   if(p.classList.contains('open')&&!document.getElementById('chat-msgs').children.length){
-    appendBotMsg("👋 Hi! I'm <strong>NeXis</strong> — your PrepInsta Analytics Assistant.<br>I can answer questions about your data, find weak students, and suggest Prepinsta courses.<br>Results come with an <strong>⬇️ Download Excel</strong> button!<br><br>Load a CSV report to get started!");
+    appendBotMsg("👋 Hi! I'm <strong>Prep X</strong> — your PrepInsta Analytics Assistant.<br>I can answer questions about your data, find weak students, and suggest Prepinsta courses.<br>Results come with an <strong>⬇️ Download Excel</strong> button!<br><br>Load a CSV report to get started!");
     showChatChips(['What can you do?','Top 5 students','Branch rankings','Average score']);
   }
 }
@@ -2361,7 +2825,7 @@ function saveApiKey(){
   const key=document.getElementById('chat-api-key')?.value?.trim();
   if(!key){showToast('Enter an API key first','err');return;}
   chatApiCfg.type=type; chatApiCfg.key=key;
-leApiSettings();
+toggleApiSettings();
   const label=type==='claude'?'Claude (Anthropic)':'OpenAI GPT';
   document.getElementById('chat-status').textContent='🤖 AI: '+label;
   appendBotMsg(`✅ <strong>AI Mode on</strong> (${label})! Now I can answer complex questions, explain trends, and give detailed recommendations.`);
@@ -2468,16 +2932,17 @@ function showToast(m,t='ok'){
   document.body.appendChild(el);
   setTimeout(()=>el.remove(),3200);
 }
+initTheme();
 </script>
 
 <!-- CHAT BOT UI -->
-<button class="chat-fab" onclick="toggleChat()" title="Ask NeXis">🤖</button>
+<button class="chat-fab" onclick="toggleChat()" title="Ask Prep X">🤖</button>
 <div class="chat-panel" id="chat-panel">
   <div class="chat-hdr">
     <div style="display:flex;align-items:center;gap:10px">
       <div style="width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px">🤖</div>
       <div>
-        <div style="font-weight:700;font-size:14px">NeXis</div>
+        <div style="font-weight:700;font-size:14px">Prep X</div>
         <div id="chat-status" style="font-size:11px;color:var(--text2)">Analytics Assistant</div>
       </div>
     </div>
@@ -2487,7 +2952,7 @@ function showToast(m,t='ok'){
     </div>
   </div>
   <div id="chat-api-settings" style="display:none;padding:12px;border-bottom:1px solid var(--border);background:var(--surface2);flex-shrink:0">
-    <div style="font-size:12px;color:var(--text2);margin-bottom:8px">🤖 Upgrade NeXis to AI Mode — uses your own API key</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:8px">🤖 Upgrade Prep X to AI Mode — uses your own API key</div>
     <select id="chat-api-type" style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 9px;font-size:12px;outline:none;margin-bottom:6px">
       <option value="claude">Claude (Anthropic) — claude-haiku</option>
       <option value="openai">OpenAI — gpt-3.5-turbo</option>
